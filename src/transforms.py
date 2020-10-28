@@ -129,7 +129,7 @@ class adjust_contrast:
         return {'image': image, 'masks': masks, 'boxes': boxes, 'labels': labels}
 
 class random_affine:
-    def __init__(self, rate=0.5, angle=(-180,180),shear=(-20,20), scale=(0.9, 1.5)):
+    def __init__(self, rate=0.5, angle=(-180,180),shear=(-45,45), scale=(0.9, 1.5)):
         self.rate = rate
         self.angle = angle
         self.shear = shear
@@ -187,12 +187,13 @@ class correct_boxes:
 
         ind = torch.ones(masks.shape[0]).long()
         for i in range(len(ind)):
-            if masks[i,:,:].max(): #true or false
+            area = (boxes[i,2] - boxes[i,0]) * (boxes[i,3] - boxes[i,1])
+            if not masks[i,:,:].max() or area < 1: #true or false
                 ind[i] = 0
 
-        masks = masks[ind, :, :]
-        boxes = boxes[ind,:]
-        labels = labels[ind]
+        masks = masks[ind>0, :, :]
+        boxes = boxes[ind>0,:]
+        labels = labels[ind>0]
 
         return {'image':image, 'masks':masks, 'boxes':boxes, 'labels':labels}
 

@@ -19,16 +19,15 @@ transforms = torchvision.transforms.Compose([
 
 tests = MaskData('../data/train/', transforms=transforms)
 tests = DataLoader(tests, batch_size=None, shuffle=True, num_workers=4)
-for i in range(10):
+for i in range(100):
     for image, data in tests:
         if image.max() == 0:
             raise ValueError('Donefuckedup')
         if data['boxes'].shape[1] != 4:
             raise ValueError(data['boxes'].shape)
-        plt.imshow(image.numpy()[0,:,:])
-        plt.show()
 
-        for box in data['boxes']:
+
+        for i, box in enumerate(data['boxes']):
             if box.sum()==0:
                 raise ValueError('Doestn work')
 

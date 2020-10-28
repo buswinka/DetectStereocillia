@@ -23,7 +23,7 @@ mask_rcnn = mask_rcnn.train().cuda()
 # mask_rcnn.load_state_dict(torch.load('/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/tests/mask_rcnn.mdl'))
 optimizer = torch.optim.Adam(mask_rcnn.parameters(), lr = 1e-5)
 
-for epoch in range(50):
+for epoch in range(301):
     for image, data in tests:
         for key in data:
             data[key] = data[key].cuda()
