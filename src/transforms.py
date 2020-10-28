@@ -185,29 +185,14 @@ class correct_boxes:
             else:
                 boxes = torch.cat((boxes, get_box_from_mask(masks[i, :, :]).unsqueeze(0)), dim=0)
 
-        num = masks.shape[0]
-        i=0
-        while i < num:
-            num = masks.shape[0]
-            print(num)
-            if masks[i,:,:].max() == 0:
-                if i != 0 and i != num-1:
-                    ind = torch.cat((torch.arange(0,i), torch.arange(i+1, num))).int()
-                    masks = masks[ind, :, :]
-                elif i ==0:
-                    ind = torch.arange(1, num).int()
-                    masks = masks[ind, :, :]
-                elif i == num-1:
-                    ind = torch.arange(0,num-1).int()
-                    masks = masks[ind, :, :]
-                else:
-                    i+=1
-            else:
-                i+=1
+        ind = torch.ones(masks.shape[0]).long()
+        for i in range(len(ind)):
+            if masks[i,:,:].max(): #true or false
+                ind[i] = 0
 
-
-
-
+        masks = masks[ind, :, :]
+        boxes = boxes[ind,:]
+        labels = labels[ind]
 
         return {'image':image, 'masks':masks, 'boxes':boxes, 'labels':labels}
 

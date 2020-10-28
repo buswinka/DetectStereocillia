@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 transforms = torchvision.transforms.Compose([
     t.random_h_flip(),
     t.random_v_flip(),
-    # t.random_affine(),
+    t.random_affine(),
     t.adjust_brightness(),
     t.adjust_contrast(),
-    # t.correct_boxes()
+    t.correct_boxes()
 ])
 
 tests = MaskData('../data/train/', transforms=transforms)

@@ -14,6 +14,7 @@ transforms = torchvision.transforms.Compose([
     t.random_affine(),
     t.adjust_brightness(),
     t.adjust_contrast(),
+    t.correct_boxes()
 ])
 
 tests = MaskData('../data/train/', transforms=transforms)
@@ -26,5 +27,9 @@ for i in range(10):
             raise ValueError(data['boxes'].shape)
         plt.imshow(image.numpy()[0,:,:])
         plt.show()
+
+        for box in data['boxes']:
+            if box.sum()==0:
+                raise ValueError('Doestn work')
 
 
