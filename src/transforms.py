@@ -96,7 +96,7 @@ class random_resize:
 
 
 class adjust_brightness:
-    def __init__(self, rate=.5, range_brightness=(.5,1.5)):
+    def __init__(self, rate=.5, range_brightness=(.3,1.7)):
         self.rate = rate
         self.range = range_brightness
 
@@ -113,7 +113,7 @@ class adjust_brightness:
 
 
 class adjust_contrast:
-    def __init__(self, rate=.5, range_contrast=(.5,1.5)):
+    def __init__(self, rate=.5, range_contrast=(.3,1.7)):
         self.rate = rate
         self.range = range_contrast
 

@@ -10,13 +10,13 @@ faster_rcnn = faster_rcnn.train().cuda()
 
 optimizer = torch.optim.Adam(faster_rcnn.parameters(), lr = 0.0001)
 
-for epoch in range(300):
+for epoch in range(100):
     for image, data in tests:
         for key in data:
             data[key] = data[key].cuda()
 
         optimizer.zero_grad()
-        loss = faster_rcnn(image.cuda(), [data])
+        loss = faster_rcnn(image.unsqueeze(0).cuda(), [data])
         losses = 0
         for key in loss:
             losses += loss[key]
@@ -27,7 +27,8 @@ for epoch in range(300):
         print(epoch, losses)
 
 faster_rcnn.eval()
-out = faster_rcnn(image.cuda())
+out = faster_rcnn(image.unsqueeze(0).cuda())
 out = out[0]
+torch.save(faster_rcnn.state_dict(), '/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/tests/faster_rcnn.mdl')
 
-src.utils.render_boxes(image, out)
+src.utils.render_boxes(image.unsqueeze(0), out, 0.5)

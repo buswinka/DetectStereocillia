@@ -25,7 +25,7 @@ class MaskData(Dataset):
         for f in files:
             df = pandas.read_csv(f)
             image = TF.to_tensor(PIL.Image.open(f[:-4:] +  '.png'))
-            image = torch.cat((image,image,image), dim=0)
+            image = torch.cat((image, image, image), dim=0)
             mask = torch.zeros((len(df), image.shape[1], image.shape[2]), dtype=torch.bool)
             labels = []
             for l in range(len(df)):
@@ -79,13 +79,14 @@ class BundleData(Dataset):
         labels = []
         for f in files:
             df = pandas.read_csv(f)
-            image = skimage.io.imread(f[:-4:] +  '.png')
+            image = TF.to_tensor(PIL.Image.open(f[:-4:] +  '.png'))
+            image = torch.cat((image, image, image), dim=0)
+            print(image.shape )
             labels = []
             boxes = []
 
             for l in range(len(df)):
                 d = json.loads(df['region_shape_attributes'][l])
-                label = json.loads(df['region_attributes'][l])
                 labels.append(1)
 
                 x = d['x']
@@ -93,8 +94,11 @@ class BundleData(Dataset):
                 width = d['width']
                 height = d['height']
 
-                box = [x,y,x+width, y+height]
-                boxes.append(box)
+                box = torch.tensor([[x,y,x+width, y+height]])
+                if l == 0:
+                    boxes = box
+                else:
+                    boxes = torch.cat((boxes, box), dim=0)
 
             self.labels.append(labels)
             self.boxes.append(boxes)
@@ -106,13 +110,7 @@ class BundleData(Dataset):
 
         im = self.images[item]
 
-        image = torch.zeros(1, 3, im.shape[0], im.shape[1])
-
-        image[0,0,:,:]=torch.from_numpy(im)
-        image[0,1,:,:]=torch.from_numpy(im)
-        image[0,2,:,:]=torch.from_numpy(im)
-
-        return image, data_dict
+        return im, data_dict
 
     def __len__(self):
         return len(self.images)

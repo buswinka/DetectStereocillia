@@ -43,6 +43,6 @@ mask_rcnn.eval()
 out = mask_rcnn(image.unsqueeze(0).cuda())
 out = out[0]
 
-src.utils.render_mask(image.unsqueeze(0), out)
+src.utils.render_mask(image.unsqueeze(0), out, 0.5)
 src.utils.render_mask(image.unsqueeze(0), data)
 torch.save(mask_rcnn.state_dict(), '/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/tests/mask_rcnn.mdl')
