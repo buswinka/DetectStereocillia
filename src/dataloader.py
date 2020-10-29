@@ -1,4 +1,6 @@
 import torch
+import matplotlib.pyplot as plt
+import os.path
 import PIL
 import numpy as np
 from torchvision import datasets
@@ -14,7 +16,8 @@ PIL.ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class MaskData(Dataset):
     def __init__(self, basedir, transforms):
-        files = glob.glob(basedir + '*.csv')
+
+        files = glob.glob(os.path.join(basedir,'*.csv'))
 
         self.transforms = transforms
         self.masks = []
@@ -68,10 +71,13 @@ class MaskData(Dataset):
     def __len__(self):
         return len(self.images)
 
+
+
 class BundleData(Dataset):
     def __init__(self, basedir):
-        files = glob.glob(basedir + '*.csv')
 
+        files = glob.glob(os.path.join(basedir,'*.csv'))
+        print(os.path.join(basedir, '*.csv'))
         self.images = []
         self.labels = []
         self.boxes = []
@@ -114,3 +120,40 @@ class BundleData(Dataset):
 
     def __len__(self):
         return len(self.images)
+
+
+class ChunjieData(Dataset):
+    def __init__(self, basedir):
+        files = glob.glob(basedir + 'Markers_Counter Window - *.jpg')
+
+        self.images = []
+        self.labels = []
+        self.boxes = []
+
+        self.shape = torch.tensor([[0,1,1]])
+
+        labels = []
+        for f in files:
+            image_point = TF.to_tensor(PIL.Image.open(f))
+            filename = os.path.splitext(f)[0]
+            filename = filename.replace('Markers_Counter Window - ','')
+
+            try:
+                image_data = TF.to_tensor(PIL.Image.open(filename+'.tif'))
+            except FileNotFoundError:
+                image_data = TF.to_tensor(PIL.Image.open(filename+'.jpg'))
+
+
+            image_data = torch.cat((image_data, image_data, image_data), dim=0)
+            dif, _ = torch.abs(image_point - image_data).max(0)
+            print(dif.shape)
+            plt.imsave('adsfa.png', dif)
+            plt.show()
+
+
+
+    def __getitem__(self, item):
+        raise NotImplementedError
+
+    def __len__(self):
+        raise NotImplementedError

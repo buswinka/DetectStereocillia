@@ -16,7 +16,8 @@ mask_rcnn.eval().cuda()
 
 tests = BundleData('../data/bundle_train/')
 
-image, _ = tests[1]
+image, _ = tests[0]
+
 transforms = torchvision.transforms.Compose([
     t.random_h_flip(),
     t.random_v_flip(),
@@ -37,7 +38,7 @@ with torch.no_grad():
         slice = image[:, int(box[1]):int(box[3]), int(box[0]):int(box[2])]
         masks = mask_rcnn(slice.unsqueeze(0).cuda())[0]
         # src.utils.render_mask(slice.unsqueeze(0), masks, 0.0)
-        larger_boi.add_partial_maks(x=int(box[1]), y=int(box[0]), model_output=masks, threshold=0.10)
+        larger_boi.add_partial_maks(x=int(box[1]), y=int(box[0]), model_output=masks, threshold=0.25)
 
 larger_boi.render()
 

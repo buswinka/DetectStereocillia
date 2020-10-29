@@ -29,6 +29,6 @@ for epoch in range(100):
 faster_rcnn.eval()
 out = faster_rcnn(image.unsqueeze(0).cuda())
 out = out[0]
-torch.save(faster_rcnn.state_dict(), '/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/tests/faster_rcnn.mdl')
+torch.save(faster_rcnn.state_dict(), '/src/faster_rcnn.mdl')
 
 src.utils.render_boxes(image.unsqueeze(0), out, 0.5)

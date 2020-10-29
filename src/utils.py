@@ -124,19 +124,11 @@ class image:
                 self.colormask[x:x+masks.shape[1]-1, y:y+masks.shape[2]-1, 2][masks[i, :, :] > 0.5] = self.simple_colors[model_output['labels'][i] - 1][2]
 
     def render(self, filename='test.png'):
-        # plt.figure(figsize=(10,10))
-        # plt.imshow(self.image[0,0,:,:], cmap='Greys_r')
-        # plt.tight_layout()
-        # plt.imshow(self.colormask, alpha=0.35)
-        # plt.savefig('test.png',dpi=300)
-        # plt.show()
-        print(self.image[0,0,:,:].shape)
         im = self.image.numpy()[0,:,:,:].astype(np.float)
         cm = self.colormask.astype(np.float)
         out = cv2.addWeighted(cm, 0.35, im, 1-0.35, 0)
-        out = skimage.img_as_uint(out)
+        out = skimage.img_as_ubyte(out)
         skimage.io.imsave(filename, out.transpose((1,2,0)))
-        print(out.shape, out.dtype)
 
 
 
