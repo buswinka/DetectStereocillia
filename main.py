@@ -6,8 +6,9 @@ import src.utils
 
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import skimage.io
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+import tkinter as Tk
+import skimage.io as io
 
 from torch.utils.data import DataLoader
 import torchvision
@@ -16,6 +17,8 @@ import warnings
 import argparse
 import sys
 import PySimpleGUI as sg
+
+import os.path
 
 matplotlib.use('TkAgg')
 warnings.filterwarnings("ignore")
@@ -45,6 +48,27 @@ def main(train_data, epochs, train_maskrcnn, eval):
     if eval:
         src.evaluate.evaluate(eval)
 
+def draw_figure_w_toolbar(canvas, fig):
+    if canvas.children:
+        for child in canvas.winfo_children():
+            child.destroy()
+
+    figure_canvas_agg = FigureCanvasTkAgg(fig, master=canvas)
+    figure_canvas_agg.draw()
+    figure_canvas_agg.get_tk_widget().pack(side=Tk.RIGHT, fill=Tk.BOTH, expand=1)
+
+    def on_key_press(event):
+        canvas.TKCanvas.mpl_connect("key_press_event", on_key_press)
+    return
+
+class Toolbar(NavigationToolbar2Tk):
+    # only display the buttons we need
+    toolitems = [t for t in NavigationToolbar2Tk.toolitems if
+                 t[0] in ('Home', 'Pan', 'Zoom')]
+    # t[0] in ('Home', 'Pan', 'Zoom','Save')]
+
+    def __init__(self, *args, **kwargs):
+        super(Toolbar, self).__init__(*args, **kwargs)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -55,67 +79,72 @@ if __name__ == "__main__":
     parser.add_argument("-e", '--eval', help='Path to image file to analyze.')
     args = parser.parse_args()
 
-    print(args)
     # If any arg is passed do this thing
-    if not len(sys.argv) > 1:
+    if len(sys.argv) > 1:
         main(args.train_data, args.epochs, args.train_mask_rcnn, args.eval)
 
-    sg.theme('Dark Blue 3')  # please make your windows colorful
+    else:
 
-    # layout = [[sg.Text('Your typed chars appear here:'), sg.Text(size=(12, 1), key='-OUTPUT-')],
-    #           [sg.Input(key='-IN-')],
-    #           [sg.Image(r'/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/train/16k01-1.png',
-    #                     size=(500,500)),],
-    #           [sg.Button('Show'), sg.Button('Exit')]]
-    #
-    # window = sg.Window('Window Title', layout)
-    #
-    # while True:  # Event Loop
-    #     event, values = window.read()
-    #     print(event, values)
-    #     if event == sg.WIN_CLOSED or event == 'Exit':
-    #         break
-    #     if event == 'Show':
-    #         # change the "output" element to be the value of "input" element
-    #         window['-OUTPUT-'].update(values['-IN-'])
-    #
-    # window.close()
+        # Code from: https://github.com/SuperMechaDeathChrist/Widgets/blob/master/plt_figure_w_controls.py
 
-    path = r'/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/train/16k01-1.png'
-    im = skimage.io.imread(path)
-    print(im.shape)
+        eval = src.evaluate.evaluate()
 
-    fig = plt.figure(frameon=False, edgecolor='Black')
-    plt.axis('off')
-    plt.tight_layout(w_pad=0, h_pad=0)
-    plt.imshow(im)
+        sg.theme('Dark Blue 3')  # please make your windows colorful
+
+        layout = [
+            [sg.T('Analyze Stereocilia App')],
+            [sg.Text("Image: "), sg.In(size=(70, 1), enable_events=True, key="-FOLDER-"), sg.FileBrowse(key='-FILE-')],
+            [sg.B('Analyze'), sg.B('Save Analysis'), sg.B('Exit')],
+            [sg.T('Figure:')],
+            [sg.Column(layout=[[sg.Canvas(key='fig_cv',size=(400 * 2, 400))]],background_color='#DAE0E6',pad=(0, 0))],
+        ]
+
+        window = sg.Window(title='Graph with controls', layout=layout)
+        window.Finalize()
+        window.Maximize()
+
+        im = []
+
+        while True:
+            event, values = window.Read()
+
+            if event in [None, 'Exit']:  # always,  always give a way out!
+                window.Close()
+                break
+
+            elif event == '-FOLDER-':
+                plt.figure(1)
+                fig = plt.gcf()
+                DPI = fig.get_dpi()
+                im = io.imread(values['-FILE-'])
+                plt.imshow(im,cmap='Greys_r')
+                ax = plt.gca()
+                ax.axes.xaxis.set_visible(False)
+                ax.axes.yaxis.set_visible(False)
+                plt.tight_layout()
+                draw_figure_w_toolbar(window.FindElement('fig_cv').TKCanvas, fig)
+
+            elif event == 'Analyze':
+                try:
+                    out, masks = eval(values['-FILE-'])
+                    out = out.transpose((1,2,0))
+                except (AttributeError, RuntimeError):
+                    continue
+
+                plt.figure(1)
+                fig = plt.gcf()
+                DPI = fig.get_dpi()
+                plt.imshow(out)
+                ax = plt.gca()
+                ax.axes.xaxis.set_visible(False)
+                ax.axes.yaxis.set_visible(False)
+                plt.tight_layout()
+                draw_figure_w_toolbar(window.FindElement('fig_cv').TKCanvas, fig)
+
+            elif event == 'Save Analysis':
+                print('SAVED YEET')
+                filename = values['-FILE-']
+                dir = os.path.splitext(filename)[0]
+                os.mkdir(dir)
 
 
-    # ------------------------------- END OF YOUR MATPLOTLIB CODE -------------------------------
-
-    # ------------------------------- Beginning of Matplotlib helper code -----------------------
-
-    def draw_figure(canvas, figure):
-        figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
-        figure_canvas_agg.draw()
-        figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
-        return figure_canvas_agg
-
-
-    # ------------------------------- Beginning of GUI CODE -------------------------------
-
-    # define the window layout
-    layout = [[sg.Text('Plot test')],
-              [sg.Canvas(key='-CANVAS-')],
-              [sg.Button('Ok')]]
-
-    # create the form and show it without the plot
-    window = sg.Window('Demo Application - Embedding Matplotlib In PySimpleGUI', layout, finalize=True,
-                       element_justification='center', font='Helvetica 18')
-
-    # add the plot to the window
-    fig_canvas_agg = draw_figure(window['-CANVAS-'].TKCanvas, fig)
-
-    event, values = window.read()
-
-    window.close()

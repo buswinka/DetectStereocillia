@@ -130,6 +130,14 @@ class image:
         out = skimage.img_as_ubyte(out)
         skimage.io.imsave(filename, out.transpose((1,2,0)))
 
+    def render_mat(self):
+        im = self.image.numpy()[0, :, :, :].astype(np.float)
+        cm = self.colormask.astype(np.float)
+        out = cv2.addWeighted(cm, 0.35, im, 1 - 0.35, 0)
+        out = skimage.img_as_ubyte(out)
+        return out
+
+
 
 
 

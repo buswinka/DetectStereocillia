@@ -52,7 +52,7 @@ def train_mask_rcnn(data=None, epochs: int = None, lr: float = 1e-5,
             optimizer.step()
 
 
-        # This is purely to output a nice bar for training
+        #  --------- This is purely to output a nice bar for training --------- #
         if e % 5 == 0:
             if e > 0:
                 print('\b \b'*len(out_str), end='')
