@@ -17,8 +17,8 @@ def test_MaskData_stress():
         t.correct_boxes()
     ])
 
-    tests = MaskData('../data/train/', transforms=transforms)
-    tests = DataLoader(tests, batch_size=None, shuffle=True, num_workers=4)
+    tests = MaskData('./data/train/', transforms=transforms)
+    tests = DataLoader(tests, batch_size=None, num_workers=4)
     for i in range(10):
         for image, data in tests:
             if image.max() == 0:

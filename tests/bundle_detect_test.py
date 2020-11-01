@@ -4,31 +4,33 @@ import src.utils
 import torch.optim
 import matplotlib.pyplot as plt
 
-tests = BundleData('../data/bundle_train/')
 
-faster_rcnn = faster_rcnn.train().cuda()
+def test_bundle_detection_scheme():
+    tests = BundleData('./data/bundle_train/')
+    assert len(tests) > 0
 
-optimizer = torch.optim.Adam(faster_rcnn.parameters(), lr = 0.0001)
+    fast = faster_rcnn
+    fast = fast.train().cuda()
 
-for epoch in range(100):
-    for image, data in tests:
-        for key in data:
-            data[key] = data[key].cuda()
+    optimizer = torch.optim.Adam(faster_rcnn.parameters(), lr = 0.0001)
 
-        optimizer.zero_grad()
-        loss = faster_rcnn(image.unsqueeze(0).cuda(), [data])
-        losses = 0
-        for key in loss:
-            losses += loss[key]
-        losses.backward()
-        optimizer.step()
+    image = []
 
-    if epoch % 50 == 0:
-        print(epoch, losses)
+    for epoch in range(10):
+        for image, data in tests:
+            for key in data:
+                data[key] = data[key].cuda()
 
-faster_rcnn.eval()
-out = faster_rcnn(image.unsqueeze(0).cuda())
-out = out[0]
-torch.save(faster_rcnn.state_dict(), '/src/faster_rcnn.mdl')
+            optimizer.zero_grad()
+            loss = fast(image.unsqueeze(0).cuda(), [data])
+            losses = 0
+            for key in loss:
+                losses += loss[key]
+            losses.backward()
+            optimizer.step()
 
-src.utils.render_boxes(image.unsqueeze(0), out, 0.5)
+    fast.eval()
+    out = faster_rcnn(image.unsqueeze(0).cuda())
+    # torch.save(faster_rcnn.state_dict(), '/src/faster_rcnn.mdl')
+    # src.utils.render_boxes(image.unsqueeze(0), out, 0.5)
+    assert True

@@ -3,12 +3,21 @@ import src.evaluate
 from src.dataloader import MaskData
 import src.transforms as t
 import src.utils
+
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import skimage.io
+
 from torch.utils.data import DataLoader
 import torchvision
 
 import warnings
 import argparse
+import sys
+import PySimpleGUI as sg
 
+matplotlib.use('TkAgg')
 warnings.filterwarnings("ignore")
 
 
@@ -46,4 +55,67 @@ if __name__ == "__main__":
     parser.add_argument("-e", '--eval', help='Path to image file to analyze.')
     args = parser.parse_args()
 
-    main(args.train_data, args.epochs, args.train_mask_rcnn, args.eval)
+    print(args)
+    # If any arg is passed do this thing
+    if not len(sys.argv) > 1:
+        main(args.train_data, args.epochs, args.train_mask_rcnn, args.eval)
+
+    sg.theme('Dark Blue 3')  # please make your windows colorful
+
+    # layout = [[sg.Text('Your typed chars appear here:'), sg.Text(size=(12, 1), key='-OUTPUT-')],
+    #           [sg.Input(key='-IN-')],
+    #           [sg.Image(r'/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/train/16k01-1.png',
+    #                     size=(500,500)),],
+    #           [sg.Button('Show'), sg.Button('Exit')]]
+    #
+    # window = sg.Window('Window Title', layout)
+    #
+    # while True:  # Event Loop
+    #     event, values = window.read()
+    #     print(event, values)
+    #     if event == sg.WIN_CLOSED or event == 'Exit':
+    #         break
+    #     if event == 'Show':
+    #         # change the "output" element to be the value of "input" element
+    #         window['-OUTPUT-'].update(values['-IN-'])
+    #
+    # window.close()
+
+    path = r'/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/train/16k01-1.png'
+    im = skimage.io.imread(path)
+    print(im.shape)
+
+    fig = plt.figure(frameon=False, edgecolor='Black')
+    plt.axis('off')
+    plt.tight_layout(w_pad=0, h_pad=0)
+    plt.imshow(im)
+
+
+    # ------------------------------- END OF YOUR MATPLOTLIB CODE -------------------------------
+
+    # ------------------------------- Beginning of Matplotlib helper code -----------------------
+
+    def draw_figure(canvas, figure):
+        figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
+        figure_canvas_agg.draw()
+        figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
+        return figure_canvas_agg
+
+
+    # ------------------------------- Beginning of GUI CODE -------------------------------
+
+    # define the window layout
+    layout = [[sg.Text('Plot test')],
+              [sg.Canvas(key='-CANVAS-')],
+              [sg.Button('Ok')]]
+
+    # create the form and show it without the plot
+    window = sg.Window('Demo Application - Embedding Matplotlib In PySimpleGUI', layout, finalize=True,
+                       element_justification='center', font='Helvetica 18')
+
+    # add the plot to the window
+    fig_canvas_agg = draw_figure(window['-CANVAS-'].TKCanvas, fig)
+
+    event, values = window.read()
+
+    window.close()
