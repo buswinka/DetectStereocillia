@@ -2,7 +2,7 @@
 
 This is a very simple application to detect stereocilia from a SEM image and save the results to a file.
 
-##Install instructions
+## Install instructions
 Open a terminal and type:
 ```
 git clone https://github.com/buswinka/DetectStereocillia 
