@@ -49,9 +49,9 @@ def gui():
     layout = [
         [sg.T('Analyze Stereocilia App')],
         [sg.Text("Image: "), sg.In(size=(70, 1), enable_events=True, key="-FOLDER-"), sg.FileBrowse(key='-FILE-')],
-        [sg.B('Analyze'), sg.B('Save Analysis'), sg.B('Exit'), sg.Text(key='Error', text='', size=(70, 1))],
+        [sg.B('Analyze'), sg.B('Save Analysis'), sg.B('Exit'), sg.Text(key='Error', text='', size=(50, 1))],
         [sg.T('Figure:')],
-        [sg.Column(layout=[[sg.Canvas(key='fig_cv', size=(400 * 2, 400))]], background_color='#DAE0E6', pad=(0, 0))],
+        [sg.Column(layout=[[sg.Canvas(key='fig_cv', size=(800, 400))]], background_color='#DAE0E6', pad=(0, 0))],
     ]
 
     window = sg.Window(title='Graph with controls', layout=layout)
@@ -80,18 +80,28 @@ def gui():
             draw_figure_w_toolbar(window.FindElement('fig_cv').TKCanvas, fig)
 
         elif event == 'Analyze':
-            try:
-                out, masks = eval(values['-FILE-'])
-                out = out.transpose((1, 2, 0))
-                window.Element('Error').Update(' ')
-            except (AttributeError, RuntimeError):
-                window.Element('Error').Update('Error: Could not analyze image')
-                continue
+            # try:
+            out, masks, keypoints = eval(values['-FILE-'])
+            out = out.transpose((1, 2, 0))
+            window.Element('Error').Update(' ')
+            # except (AttributeError, RuntimeError):
+            #     window.Element('Error').Update('Error: Could not analyze image')
+            #     continue
 
             plt.figure(1)
             fig = plt.gcf()
             DPI = fig.get_dpi()
             plt.imshow(out)
+
+            for i in range(keypoints['keypoints'].shape[0]):
+                if keypoints['scores'][i] < 0.5:
+                    continue
+                x = keypoints['keypoints'][i, :, 0]
+                y = keypoints['keypoints'][i, :, 1]
+                plt.plot(x.cpu().detach().numpy(), y.cpu().detach().numpy(), 'b-', alpha=0.5)
+                plt.plot(x.cpu().detach().numpy(), y.cpu().detach().numpy(), 'b.', alpha=0.5)
+
+
             ax = plt.gca()
             ax.axes.xaxis.set_visible(False)
             ax.axes.yaxis.set_visible(False)

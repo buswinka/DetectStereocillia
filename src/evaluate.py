@@ -1,5 +1,5 @@
-from src.model import faster_rcnn, mask_rcnn
-from src.dataloader import BundleData, MaskData
+from src.model import faster_rcnn, mask_rcnn, keypoint_rcnn
+from src.dataloader import BundleData, MaskData, KeypointData
 import torch
 import src.utils
 import torch.optim
@@ -23,7 +23,11 @@ class evaluate:
             mask_rcnn.load_state_dict(torch.load(os.path.join(models_path, 'mask_rcnn.mdl')))
             mask_rcnn.eval().to(device)
 
+            keypoint_rcnn.load_state_dict(torch.load(os.path.join(models_path, 'keypoint_rcnn.mdl')))
+            keypoint_rcnn.eval().to(device)
+
             self.mask_rcnn = mask_rcnn
+            self.keypoint_rcnn = keypoint_rcnn
 
         except FileNotFoundError:
             cwd = os.getcwd()
@@ -33,7 +37,11 @@ class evaluate:
             mask_rcnn.load_state_dict(torch.load(os.path.join(models_path, 'mask_rcnn.mdl')))
             mask_rcnn.eval().to(device)
 
+            keypoint_rcnn.load_state_dict(torch.load(os.path.join(models_path, 'keypoint_rcnn.mdl')))
+            keypoint_rcnn.eval().to(device)
+
             self.mask_rcnn = mask_rcnn
+            self.keypoint_rcnn = keypoint_rcnn
 
     def __call__(self, eval_path):
 
@@ -43,9 +51,13 @@ class evaluate:
         image = TF.to_tensor(PIL.Image.open(eval_path))
         image = torch.cat((image, image, image), dim=0)
         larger_boi = src.utils.image(image.unsqueeze(0))
+
         masks = self.mask_rcnn(image.unsqueeze(0).to(device))[0]
+        keypoints = self.keypoint_rcnn(image.unsqueeze(0).to(device))[0]
+
         larger_boi.add_partial_maks(x=0, y=0, model_output=masks, threshold=0.25)
-        return larger_boi.render_mat(), masks
+
+        return larger_boi.render_mat(), masks, keypoints
 
 
 
