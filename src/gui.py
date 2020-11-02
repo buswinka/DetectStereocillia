@@ -68,11 +68,11 @@ def gui():
             break
 
         elif event == '-FOLDER-':
-            plt.figure(1)
+            fig, ax = plt.subplots(1)
             fig = plt.gcf()
             DPI = fig.get_dpi()
             im = io.imread(values['-FILE-'])
-            plt.imshow(im, cmap='Greys_r')
+            ax.imshow(im, cmap='Greys_r')
             ax = plt.gca()
             ax.axes.xaxis.set_visible(False)
             ax.axes.yaxis.set_visible(False)
@@ -80,18 +80,17 @@ def gui():
             draw_figure_w_toolbar(window.FindElement('fig_cv').TKCanvas, fig)
 
         elif event == 'Analyze':
-            # try:
-            out, masks, keypoints = eval(values['-FILE-'])
-            out = out.transpose((1, 2, 0))
-            window.Element('Error').Update(' ')
-            # except (AttributeError, RuntimeError):
-            #     window.Element('Error').Update('Error: Could not analyze image')
-            #     continue
+            try:
+                out, masks, keypoints = eval(values['-FILE-'])
+                out = out.transpose((1, 2, 0))
+                window.Element('Error').Update(' ')
+            except (AttributeError, RuntimeError):
+                window.Element('Error').Update('Error: Could not load image')
+                continue
 
-            plt.figure(1)
-            fig = plt.gcf()
+            fig, ax = plt.subplots(1)
             DPI = fig.get_dpi()
-            plt.imshow(out)
+            ax.imshow(out)
 
             for i in range(keypoints['keypoints'].shape[0]):
                 if keypoints['scores'][i] < 0.5:
@@ -102,7 +101,6 @@ def gui():
                 plt.plot(x.cpu().detach().numpy(), y.cpu().detach().numpy(), 'b.', alpha=0.5)
 
 
-            ax = plt.gca()
             ax.axes.xaxis.set_visible(False)
             ax.axes.yaxis.set_visible(False)
             plt.tight_layout()

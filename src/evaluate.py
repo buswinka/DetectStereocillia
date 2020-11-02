@@ -52,8 +52,9 @@ class evaluate:
         image = torch.cat((image, image, image), dim=0)
         larger_boi = src.utils.image(image.unsqueeze(0))
 
-        masks = self.mask_rcnn(image.unsqueeze(0).to(device))[0]
-        keypoints = self.keypoint_rcnn(image.unsqueeze(0).to(device))[0]
+        with torch.no_grad():
+            masks = self.mask_rcnn(image.unsqueeze(0).to(device))[0]
+            keypoints = self.keypoint_rcnn(image.unsqueeze(0).to(device))[0]
 
         larger_boi.add_partial_maks(x=0, y=0, model_output=masks, threshold=0.25)
 

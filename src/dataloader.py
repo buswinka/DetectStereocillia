@@ -204,7 +204,10 @@ class KeypointData(Dataset):
                     if keypoints is None:
                         keypoints = polyline.unsqueeze(0)
                     else:
-                        keypoints = torch.cat((keypoints, polyline.unsqueeze(0)), dim=0)
+                        try:
+                            keypoints = torch.cat((keypoints, polyline.unsqueeze(0)), dim=0)
+                        except RuntimeError:
+                            raise RuntimeError('accidental extra kepoint value. Should only be 3', l, f)
 
 
             self.labels.append(torch.tensor(labels))
