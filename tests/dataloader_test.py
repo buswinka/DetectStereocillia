@@ -1,5 +1,5 @@
 from src.model import mask_rcnn
-from src.dataloader import MaskData, ChunjieData
+from src.dataloader import MaskData, ChunjieData, KeypointData
 import src.transforms as t
 import src.utils
 import torch.optim
@@ -38,5 +38,13 @@ def test_ChunjieData_stress():
 
     return None
 
-test_ChunjieData_stress()
+def test_keypoint_dataloader():
+    data = KeypointData('/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/keypoint_train_data')
+    image, data_dict = data[0]
+
+    assert data_dict['boxes'].shape[1] == 4
+    assert data_dict['boxes'].shape[0] == data_dict['keypoints'].shape[0]
+    assert data_dict['keypoints'].shape[2] == 3
+
+
 

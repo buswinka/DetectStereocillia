@@ -26,5 +26,7 @@ mask_rcnn = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=False,
 faster_rcnn = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=False, progress=True, num_classes=2,
                                                                pretrained_backbone=True)
 
-
+keypoint_rcnn = torchvision.models.detection.keypointrcnn_resnet50_fpn(pretrained=False, progress=True, num_classes=2,
+                                                                       num_keypoints=3, pretrained_backbone=True,
+                                                                       trainable_backbone_layers=3)
 

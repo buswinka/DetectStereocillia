@@ -208,3 +208,9 @@ def get_box_from_mask(image: torch.Tensor) -> torch.Tensor:
     y = ind[:, 0]
     torch.stack((torch.min(x),torch.min(y),torch.max(x),torch.max(y)), out=box)
     return box
+
+class nul_transform:
+    def __init__(self):
+        pass
+    def __call__(self, input):
+        return input

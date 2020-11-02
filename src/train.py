@@ -1,5 +1,5 @@
 import src.model
-from src.dataloader import MaskData
+from src.dataloader import MaskData, KeypointData
 import src.transforms as t
 import src.utils
 import torch.optim
@@ -56,7 +56,7 @@ def train_mask_rcnn(data=None, epochs: int = None, lr: float = 1e-5,
         if e % 5 == 0:
             if e > 0:
                 print('\b \b'*len(out_str), end='')
-            progress_bar = '[' + '|' * +int(np.round(e/epochs, decimals=1)*10) +\
+            progress_bar = '[' + '█' * +int(np.round(e/epochs, decimals=1)*10) +\
                            ' ' * int((10-np.round(e/epochs, decimals=1)*10)) + f'] {np.round(e/epochs, decimals=3)}'
 
             out_str = f'epoch: {e} ' + progress_bar + f' | epoch loss: {torch.tensor(epoch_loss).mean().item()}'
@@ -72,3 +72,63 @@ def train_mask_rcnn(data=None, epochs: int = None, lr: float = 1e-5,
     torch.save(mask_rcnn.state_dict(), 'models/mask_rcnn.mdl')
 
     return None
+
+
+def train_keypoint_rcnn(data=None, epochs: int = None, lr: float = 1e-5, pretrained: str = None):
+
+    model = src.model.keypoint_rcnn
+
+    if not isinstance(pretrained, str) and pretrained is not None:
+        raise ValueError(f'Argument "pretrained" must be a path to a valid mask file, '
+                         f'not {pretrained} with type {type(pretrained)}')
+    if epochs is None:
+        epochs = 500
+
+    if pretrained is not None:
+        print('Loading...')
+        model.load_state_dict(torch.load(pretrained))
+
+    if torch.cuda.is_available(): device = 'cuda:0'
+    else: device = 'cpu'
+
+    # tests = KeypointData('/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/keypoint_train_data')
+    model = model.train().to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+
+    for e in range(epochs):
+        epoch_loss = []
+        for image, data_dict in data:
+            for key in data_dict:
+                data_dict[key] = data_dict[key].to(device)
+
+            optimizer.zero_grad()
+            loss = model(image.unsqueeze(0).to(device), [data_dict])
+            losses = 0
+            for key in loss:
+                losses += loss[key]
+            losses.backward()
+            epoch_loss.append(losses.item())
+            optimizer.step()
+
+            #  --------- This is purely to output a nice bar for training --------- #
+            if e % 5 == 0:
+                if e > 0:
+                    print('\b \b' * len(out_str), end='')
+                progress_bar = '[' + '█' * +int(np.round(e / epochs, decimals=1) * 10) + \
+                               ' ' * int(
+                    (10 - np.round(e / epochs, decimals=1) * 10)) + f'] {np.round(e / epochs, decimals=3)}'
+
+                out_str = f'epoch: {e} ' + progress_bar + f' | epoch loss: {torch.tensor(epoch_loss).mean().item()}'
+                print(out_str, end='')
+
+            # If its the final epoch print out final string
+            elif e == epochs - 1:
+                print('\b \b' * len(out_str), end='')
+                progress_bar = '[' + '█' * 10 + f'] {1.0}'
+                out_str = f'epoch: {epochs} ' + progress_bar + f' | epoch loss: {torch.tensor(epoch_loss).mean().item()}'
+                print(out_str)
+
+        torch.save(model.state_dict(), 'models/keypoint_rcnn.mdl')
+
+    model.eval()
+    out = model(image.unsqueeze(0).cuda())

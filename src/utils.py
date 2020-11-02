@@ -97,6 +97,41 @@ def render_boxes(image: torch.Tensor, model_output:dict, threshold: float) -> No
 
     plt.show()
 
+
+def render_keypoints(image:torch.Tensor, model_output:dict, threshold:float) -> None:
+
+    image = image[0,0,:,:].detach().cpu().numpy()
+    boxes = model_output['boxes'].detach().cpu().numpy()
+    keypoints = model_output['keypoints'].detach().cpu().numpy()
+
+    plt.imshow(image, cmap='Greys_r')
+    plt.tight_layout()
+
+    for i, box in enumerate(boxes):
+        if model_output['scores'][i] < threshold:
+            continue
+
+        x1 = box[0]
+        y1 = box[1]
+        x2 = box[2]
+        y2 = box[3]
+
+        # plt.plot([x1,x2],[y2,y2],'r', lw=0.5)
+        # plt.plot([x1,x2],[y1,y1],'r', lw=0.5)
+        # plt.plot([x1,x1],[y1,y2],'r', lw=0.5)
+        # plt.plot([x2,x2],[y1,y2],'r', lw=0.5)
+
+        x = keypoints[i,:,0]
+        y = keypoints[i,:,1]
+        plt.plot(x,y,'b-', alpha=0.5)
+        plt.plot(x,y,'b.', alpha=0.5)
+
+        plt.plot()
+
+    plt.show()
+
+
+
 class image:
     def __init__(self, base_im):
         self.image = base_im
@@ -136,8 +171,6 @@ class image:
         out = cv2.addWeighted(cm, 0.35, im, 1 - 0.35, 0)
         out = skimage.img_as_ubyte(out)
         return out
-
-
 
 
 

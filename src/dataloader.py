@@ -5,6 +5,7 @@ import PIL
 import numpy as np
 from torchvision import datasets
 from torch.utils.data.dataset import Dataset
+import src.transforms as t
 import glob
 import pandas
 import skimage.io
@@ -72,12 +73,10 @@ class MaskData(Dataset):
         return len(self.images)
 
 
-
 class BundleData(Dataset):
     def __init__(self, basedir):
 
         files = glob.glob(os.path.join(basedir,'*.csv'))
-        print(os.path.join(basedir, '*.csv'))
         self.images = []
         self.labels = []
         self.boxes = []
@@ -87,7 +86,6 @@ class BundleData(Dataset):
             df = pandas.read_csv(f)
             image = TF.to_tensor(PIL.Image.open(f[:-4:] +  '.png'))
             image = torch.cat((image, image, image), dim=0)
-            print(image.shape )
             labels = []
             boxes = []
 
@@ -146,7 +144,6 @@ class ChunjieData(Dataset):
 
             image_data = torch.cat((image_data, image_data, image_data), dim=0)
             dif, _ = torch.abs(image_point - image_data).max(0)
-            print(dif.shape)
             plt.imsave('adsfa.png', dif)
             plt.show()
 
@@ -157,3 +154,74 @@ class ChunjieData(Dataset):
 
     def __len__(self):
         raise NotImplementedError
+
+
+class KeypointData(Dataset):
+    def __init__(self, basedir, transforms=None):
+
+        files = glob.glob(os.path.join(basedir,'*.csv'))
+
+        self.transforms = transforms
+        self.images = []
+        self.labels = []
+        self.boxes = []
+        self.keypoints = []
+
+        for f in files:
+            df = pandas.read_csv(f)
+            image = TF.to_tensor(PIL.Image.open(f[:-4:] +  '.png'))
+            image = torch.cat((image, image, image), dim=0)
+
+            boxes = None
+            keypoints = None
+            labels = []
+
+            for l in range(len(df)):
+                d = json.loads(df['region_shape_attributes'][l])
+                label = json.loads(df['region_attributes'][l])
+                try:
+                    labels.append(int(label['stereocillia']))
+                except KeyError:
+                    labels.append(1)
+
+                if d['name'] == 'rect':
+                    x = d['x']
+                    y = d['y']
+                    width = d['width']
+                    height = d['height']
+                    box = torch.tensor([x, y, x + width, y + height])
+                    # Basically just append boxes to end of boxes
+                    if boxes is None:
+                        boxes = box.unsqueeze(0)
+                    else:
+                        boxes = torch.cat((boxes, box.unsqueeze(0)), dim=0)
+
+                if d['name'] == 'polyline':
+                    x = torch.tensor(d['all_points_x'])
+                    y = torch.tensor(d['all_points_y'])
+                    k = torch.ones(x.shape)
+                    polyline = torch.cat((x.unsqueeze(-1),y.unsqueeze(-1),k.unsqueeze(-1)),dim=-1)
+                    if keypoints is None:
+                        keypoints = polyline.unsqueeze(0)
+                    else:
+                        keypoints = torch.cat((keypoints, polyline.unsqueeze(0)), dim=0)
+
+
+            self.labels.append(torch.tensor(labels))
+            self.boxes.append(boxes)
+            self.keypoints.append(keypoints)
+            self.images.append(image)
+
+    def __getitem__(self, item):
+        data_dict ={'boxes': self.boxes[item],
+                    'labels': self.labels[item],
+                    'keypoints': self.keypoints[item],
+                    'image': self.images[item]}
+
+        if self.transforms is not None:
+            data_dict = self.transforms(data_dict)
+
+        return data_dict['image'], data_dict
+
+    def __len__(self):
+        return len(self.images)
