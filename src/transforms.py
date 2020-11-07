@@ -155,6 +155,16 @@ class random_affine:
 
         return {'image': image, 'masks': masks, 'boxes': boxes, 'labels': labels}
 
+
+class to_cuda:
+    def __init__(self):
+        pass
+    def __call__(self, input:dict=None) -> dict:
+        for key in input:
+            input[key] = input[key].cuda()
+        return input
+
+
 class to_tensor:
     def __init__(self):
         pass
@@ -169,6 +179,7 @@ class to_tensor:
 
         return {'image':image, 'masks':masks, 'boxes':boxes, 'labels':labels}
 
+
 class correct_boxes:
     def __init__(self):
         pass
@@ -181,9 +192,9 @@ class correct_boxes:
 
         for i in range(masks.shape[0]):
             if i == 0:
-                boxes = get_box_from_mask(masks[i, :, :]).unsqueeze(0)
+                boxes = get_box_from_mask(masks[i, :, :]).unsqueeze(0).to(image.device)
             else:
-                boxes = torch.cat((boxes, get_box_from_mask(masks[i, :, :]).unsqueeze(0)), dim=0)
+                boxes = torch.cat((boxes, get_box_from_mask(masks[i, :, :]).unsqueeze(0).to(image.device)), dim=0)
 
         ind = torch.ones(masks.shape[0]).long()
         for i in range(len(ind)):
@@ -203,7 +214,7 @@ def get_box_from_mask(image: torch.Tensor) -> torch.Tensor:
     if len(ind) == 0:
         return torch.tensor([0,0,0,0])
 
-    box = torch.empty(4)
+    box = torch.empty(4).to(image.device)
     x = ind[:, 1]
     y = ind[:, 0]
     torch.stack((torch.min(x),torch.min(y),torch.max(x),torch.max(y)), out=box)

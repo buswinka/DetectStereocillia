@@ -17,19 +17,19 @@ def test_MaskData_stress():
         t.correct_boxes()
     ])
 
-    tests = MaskData('./data/train/', transforms=transforms)
-    tests = DataLoader(tests, batch_size=None, num_workers=4)
-    for i in range(10):
-        for image, data in tests:
-            if image.max() == 0:
-                raise ValueError('Donefuckedup')
-            if data['boxes'].shape[1] != 4:
-                raise ValueError(data['boxes'].shape)
+    tests = MaskData('/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/train', transforms=transforms)
+    # tests = DataLoader(tests, batch_size=None, num_workers=4)
 
+    image, data_dict = tests[1]
+    mask = data_dict['masks']
 
-            for i, box in enumerate(data['boxes']):
-                if box.sum()==0:
-                    raise ValueError('Doestn work')
+    print(mask.shape)
+    m,_ = mask.max(dim=0)
+    plt.imshow(m)
+    plt.show()
+
+    plt.imshow(image[0,:,:])
+    plt.show()
 
     return None
 
@@ -47,4 +47,5 @@ def test_keypoint_dataloader():
     assert data_dict['keypoints'].shape[2] == 3
 
 
+test_MaskData_stress()
 

@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 import src.transforms as t
 import torchvision.transforms
 
-faster_rcnn.load_state_dict(torch.load('./faster_rcnn.mdl'))
+faster_rcnn.load_state_dict(torch.load('/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/models/faster_rcnn.mdl'))
 faster_rcnn.eval().cuda()
 
-mask_rcnn.load_state_dict(torch.load('/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/tests/mask_rcnn.mdl'))
+mask_rcnn.load_state_dict(torch.load('/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/models/mask_rcnn.mdl'))
 mask_rcnn.eval().cuda()
 
 tests = BundleData('../data/bundle_train/')
@@ -27,7 +27,7 @@ transforms = torchvision.transforms.Compose([
     t.correct_boxes()
 ])
 
-tests = MaskData('../data/train/', transforms=transforms)
+tests = MaskData('../data/', transforms=transforms)
 # tests = DataLoader(tests, batch_size=None, shuffle=True, num_workers=4)
 
 larger_boi = src.utils.image(image.unsqueeze(0))

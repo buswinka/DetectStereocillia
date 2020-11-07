@@ -18,7 +18,7 @@ PIL.ImageFile.LOAD_TRUNCATED_IMAGES = True
 class MaskData(Dataset):
     def __init__(self, basedir, transforms):
 
-        files = glob.glob(os.path.join(basedir,'*.csv'))
+        files = glob.glob(os.path.join(basedir,'data.csv'))
 
         self.transforms = transforms
         self.masks = []
@@ -26,15 +26,29 @@ class MaskData(Dataset):
         self.labels = []
         self.boxes = []
 
-        for f in files:
-            df = pandas.read_csv(f)
-            image = TF.to_tensor(PIL.Image.open(f[:-4:] +  '.png'))
+        data_frame = pandas.read_csv(files[0])
+        image_names = data_frame['filename'].unique()
+
+        for im_name in image_names:
+            df = data_frame[data_frame['filename'] == im_name]
+
+            if len(df) <= 1:
+                continue
+
+            im_path = os.path.join(basedir, im_name)
+            try:
+                image = TF.to_tensor(PIL.Image.open(im_path))
+            except:
+                continue
+
             image = torch.cat((image, image, image), dim=0)
-            mask = torch.zeros((len(df), image.shape[1], image.shape[2]), dtype=torch.bool)
+            mask = torch.zeros((len(df), image.shape[1], image.shape[2]), dtype=torch.uint8)
             labels = []
+
+
             for l in range(len(df)):
-                d = json.loads(df['region_shape_attributes'][l])
-                label = json.loads(df['region_attributes'][l])
+                d = json.loads(df['region_shape_attributes'].to_list()[l])
+                label = json.loads(df['region_attributes'].to_list()[l])
                 try:
                     labels.append(int(label['stereocillia']))
                 except KeyError:
@@ -146,7 +160,6 @@ class ChunjieData(Dataset):
             dif, _ = torch.abs(image_point - image_data).max(0)
             plt.imsave('adsfa.png', dif)
             plt.show()
-
 
 
     def __getitem__(self, item):

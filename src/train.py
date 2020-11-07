@@ -11,7 +11,7 @@ import torchvision
 import matplotlib.pyplot as plt
 
 
-def train_mask_rcnn(data=None, epochs: int = None, lr: float = 1e-5,
+def train_mask_rcnn(data=None, epochs: int = None, lr: float = None,
                     pretrained: str = None):
 
     mask_rcnn = src.model.mask_rcnn
@@ -21,6 +21,9 @@ def train_mask_rcnn(data=None, epochs: int = None, lr: float = 1e-5,
                          f'not {pretrained} with type {type(pretrained)}')
     if epochs is None:
         epochs = 500
+
+    if lr is None:
+        lr = 1e-5
 
     if pretrained is not None:
         print('Loading...')
@@ -38,30 +41,28 @@ def train_mask_rcnn(data=None, epochs: int = None, lr: float = 1e-5,
         raise ValueError('No available train data')
     for e in range(epochs):
         epoch_loss = []
-        time_1 = time.clock_gettime_ns()
+        time_1 = time.clock_gettime_ns(1)
         for image, data_dict in data:
-            for key in data_dict:
-                data_dict[key] = data_dict[key].to(device)
-
             optimizer.zero_grad()
-            loss = mask_rcnn(image.unsqueeze(0).to(device), [data_dict])
+            loss = mask_rcnn(image.unsqueeze(0), [data_dict])
             losses = 0
             for key in loss:
                 losses += loss[key]
             losses.backward()
             epoch_loss.append(losses.item())
             optimizer.step()
-        time_2 = time.clock_gettime_ns()
+
+        time_2 = time.clock_gettime_ns(1)
         delta_time = (np.abs(time_2-time_1) / 1e9) / 60
 
         #  --------- This is purely to output a nice bar for training --------- #
-        if e % 5 == 0:
+        if e % 1 == 0:
             if e > 0:
                 print('\b \b'*len(out_str), end='',flush=True)
             progress_bar = '[' + '█' * +int(np.round(e/epochs, decimals=1)*10) +\
                            ' ' * int((10-np.round(e/epochs, decimals=1)*10)) + f'] {np.round(e/epochs, decimals=3)}'
 
-            out_str = f'epoch: {epochs} ' + progress_bar + f'| time remaining: {delta_time * (epochs-e)} | epoch loss: {torch.tensor(epoch_loss).mean().item()}'
+            out_str = f'epoch: {e} ' + progress_bar + f'| time remaining: {delta_time * (epochs-e)} | epoch loss: {torch.tensor(epoch_loss).mean().item()}'
             print(out_str, end='',flush=True)
 
         # If its the final epoch print out final string
@@ -99,7 +100,7 @@ def train_keypoint_rcnn(data=None, epochs: int = None, lr: float = 1e-5, pretrai
 
     for e in range(epochs):
         epoch_loss = []
-        time_1 = time.clock_gettime_ns()
+        time_1 = time.clock_gettime_ns(1)
         for image, data_dict in data:
             for key in data_dict:
                 data_dict[key] = data_dict[key].to(device)
@@ -112,9 +113,9 @@ def train_keypoint_rcnn(data=None, epochs: int = None, lr: float = 1e-5, pretrai
             losses.backward()
             epoch_loss.append(losses.item())
             optimizer.step()
-        time_2 = time.clock_gettime_ns()
+        time_2 = time.clock_gettime_ns(1)
 
-        delta_time = (np.abs(time_2-time_1) / 1e9)/60
+        delta_time = np.round((np.abs(time_2-time_1) / 1e9)/60, decimals=2)
 
             #  --------- This is purely to output a nice bar for training --------- #
         if e % 5 == 0:
@@ -124,14 +125,14 @@ def train_keypoint_rcnn(data=None, epochs: int = None, lr: float = 1e-5, pretrai
                            ' ' * int(
                 (10 - np.round(e / epochs, decimals=1) * 10)) + f'] {np.round(e / epochs, decimals=3)}%'
 
-            out_str = f'epoch: {epochs} ' + progress_bar + f'| time remaining: {delta_time * (epochs-e)} | epoch loss: {torch.tensor(epoch_loss).mean().item()}'
+            out_str = f'epoch: {e} ' + progress_bar + f'| time remaining: {delta_time * (epochs-e)} min | epoch loss: {torch.tensor(epoch_loss).mean().item()}'
             print(out_str, end='')
 
         # If its the final epoch print out final string
         elif e == epochs - 1:
             print('\b \b' * len(out_str), end='')
             progress_bar = '[' + '█' * 10 + f'] {1.0}'
-            out_str = f'epoch: {epochs} ' + progress_bar + f'| time remaining: {delta_time * (epochs-e)} | epoch loss: {torch.tensor(epoch_loss).mean().item()}'
+            out_str = f'epoch: {epochs} ' + progress_bar + f'| time remaining: {0} min | epoch loss: {torch.tensor(epoch_loss).mean().item()}'
             print(out_str)
 
         torch.save(model.state_dict(), 'models/keypoint_rcnn.mdl')
