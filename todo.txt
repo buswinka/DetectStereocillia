@@ -1,0 +1,14 @@
+Evaluation-
+todo: add model to detect and classify stereocillia via faster rcnn
+
+Save-
+todo: add keypoint data to csv
+todo: figure out height thing - speak with artur?
+
+Train-
+todo: get more of every type of data
+todo: implement lr decay
+
+Transforms-
+todo: add random black box transform
+todo: torch jit some more shit?

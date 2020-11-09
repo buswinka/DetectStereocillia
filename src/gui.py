@@ -1,5 +1,6 @@
 import src.train
 import src.evaluate
+import src.save
 from src.dataloader import MaskData, KeypointData
 import src.transforms as t
 import src.utils
@@ -60,6 +61,8 @@ def gui():
 
     im = []
 
+    _ANALYZED = False
+
     while True:
         event, values = window.Read()
 
@@ -79,13 +82,17 @@ def gui():
             plt.tight_layout()
             draw_figure_w_toolbar(window.FindElement('fig_cv').TKCanvas, fig)
 
+            _ANALYZED = False
+
         elif event == 'Analyze':
             try:
                 out, masks, keypoints = eval(values['-FILE-'])
                 out = out.transpose((1, 2, 0))
                 window.Element('Error').Update(' ')
+                _ANALYZED = True
             except (AttributeError, RuntimeError):
                 window.Element('Error').Update('Error: Could not load image')
+                _ANALYZED = False
                 continue
 
             fig, ax = plt.subplots(1)
@@ -107,10 +114,9 @@ def gui():
             draw_figure_w_toolbar(window.FindElement('fig_cv').TKCanvas, fig)
 
         elif event == 'Save Analysis':
-            try:
+            if _ANALYZED:
                 filename = values['-FILE-']
-                dir = os.path.splitext(filename)[0]
-                os.mkdir(dir)
-            except:
-                window.Element('Error').Update('Error: Cannot save file')
+                src.save.save(masks, filename)
+            else:
+                window.Element('Error').Update('Error: File has not been analyzed. Nothing to Save')
                 continue

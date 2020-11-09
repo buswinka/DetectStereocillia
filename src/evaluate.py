@@ -3,6 +3,7 @@ from src.dataloader import BundleData, MaskData, KeypointData
 import torch
 import src.utils
 import torch.optim
+import torchvision.ops as ops
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import src.transforms as t
@@ -56,7 +57,14 @@ class evaluate:
             masks = self.mask_rcnn(image.unsqueeze(0).to(device))[0]
             keypoints = self.keypoint_rcnn(image.unsqueeze(0).to(device))[0]
 
-        larger_boi.add_partial_maks(x=0, y=0, model_output=masks, threshold=0.25)
+        index = ops.nms(masks['boxes'], masks['scores'], 0.5)
+
+        masks['masks']=masks['masks'][index,:,:]
+        masks['scores']=masks['scores'][index]
+        masks['labels']=masks['labels'][index]
+        masks['boxes']=masks['boxes'][index, :]
+
+        larger_boi.add_partial_maks(x=0, y=0, model_output=masks, threshold=0.50)
 
         return larger_boi.render_mat(), masks, keypoints
 
