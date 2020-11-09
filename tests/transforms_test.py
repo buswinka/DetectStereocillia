@@ -11,6 +11,6 @@ def test_get_box_from_mask():
 
 
 def test_gaussian_blur():
-    x = torch.randn((1,3,5000,5000))
+    data = {'image': torch.randn((1,3,50,50)), 'masks':None, 'boxes':None, 'labels':None}
     gb = src.transforms.gaussian_blur()
-    gb(x)
+    gb(data)

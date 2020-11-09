@@ -159,7 +159,10 @@ class image:
                 self.colormask[x:x+masks.shape[1]-1, y:y+masks.shape[2]-1, 2][masks[i, :, :] > 0.5] = self.simple_colors[model_output['labels'][i] - 1][2]
 
     def render(self, filename='test.png'):
-        im = self.image.numpy()[0,:,:,:].astype(np.float)
+        if self.image.ndim == 4:
+            im = self.image.numpy()[0,:,:,:].astype(np.float)
+        else:
+            im = self.image.numpy().astype(np.float)
         cm = self.colormask.astype(np.float)
         out = cv2.addWeighted(cm, 0.35, im, 1-0.35, 0)
         out = skimage.img_as_ubyte(out)
