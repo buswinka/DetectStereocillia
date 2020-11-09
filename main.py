@@ -37,6 +37,9 @@ def main(train_data, epochs, lr,  train_maskrcnn, train_keypoint_rcnn, eval):
             t.random_h_flip(),
             t.random_v_flip(),
             t.random_affine(),
+            t.gaussian_blur(),
+            t.random_resize(),
+            t.stack_image(),
             t.adjust_brightness(),
             t.adjust_contrast(),
             t.correct_boxes()

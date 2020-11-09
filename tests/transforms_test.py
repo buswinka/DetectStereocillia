@@ -9,3 +9,8 @@ def test_get_box_from_mask():
     out = src.transforms.get_box_from_mask(mask)
     assert out is not None
 
+
+def test_gaussian_blur():
+    x = torch.randn((1,3,5000,5000))
+    gb = src.transforms.gaussian_blur()
+    gb(x)

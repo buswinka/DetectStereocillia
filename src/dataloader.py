@@ -41,7 +41,7 @@ class MaskData(Dataset):
             except:
                 continue
 
-            image = torch.cat((image, image, image), dim=0)
+            # image = torch.cat((image, image, image), dim=0)
             mask = torch.zeros((len(df), image.shape[1], image.shape[2]), dtype=torch.uint8)
             labels = []
 

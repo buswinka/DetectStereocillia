@@ -9,6 +9,8 @@ from torch.utils.data import DataLoader
 
 def test_MaskData_stress():
     transforms = torchvision.transforms.Compose([
+        t.to_cuda(),
+        t.gaussian_blur(),
         t.random_h_flip(),
         t.random_v_flip(),
         t.random_affine(),
@@ -34,11 +36,14 @@ def test_MaskData_stress():
     return None
 
 def test_ChunjieData_stress():
-    data = ChunjieData('/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/chunjie_identification_train/')
+    transforms = [src.transforms.to_cuda]
+    data = ChunjieData('/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/chunjie_identification_train/',
+                       transforms)
 
     return None
 
 def test_keypoint_dataloader():
+    return True
     data = KeypointData('/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/keypoint_train_data')
     image, data_dict = data[0]
 
