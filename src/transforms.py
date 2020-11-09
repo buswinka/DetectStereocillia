@@ -1,109 +1,120 @@
 import torch
 import torchvision.transforms.functional
-import skimage.transform as transform
-import numpy as np
+from typing import List, Dict
 
 
 class random_v_flip:
-    def __init__(self, rate=.5):
+    def __init__(self, rate: float = 0.5) -> None:
         self.rate = rate
-        example_input = torch.randn((1,3,100,100,10))
+
+        example_input = torch.randn((1, 3, 100, 100, 10))
         self.fun = torch.jit.trace(torchvision.transforms.functional.vflip, example_inputs=example_input)
 
-    def __call__(self, input):
-        image = input['image']
-        boxes = input['boxes']
-        masks = input['masks']
-        labels = input['labels']
-
+    def __call__(self, data_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
-        Code specifically for transforming images and boxes for fasterRCNN
-        Not Compatable with UNET
+        Randomly flips the image vertically.
 
-        :param image:
-        :param boxes:
-        :return:
+        :param data_dict Dict[str, torch.Tensor]: data_dictionary from a dataloader. Has keys:
+            key : val
+            'image' : torch.Tensor of size [C, X, Y] where C is the number of colors, X,Y are the image height and width
+            'masks' : torch.Tensor of size [I, X, Y] where I is the number of identifiable objects in the image
+            'boxes' : torch.Tensor of size [I, 4] where each box is [x1, y1, x2, y2]
+            'labels' : torch.Tensor of size [I] class label for each instance
+
+        :return: Dict[str, torch.Tensor]
         """
-        flip = torch.randn(1) < self.rate
 
-        if flip:
-            image = self.fun(image)
-            masks = self.fun(masks)
+        if torch.randn(1) < self.rate:
+            data_dict['image'] = self.fun(data_dict['image'])
+            data_dict['masks'] = self.fun(data_dict['masks'])
 
-        return {'image':image, 'masks':masks, 'boxes':boxes, 'labels':labels}
+        return data_dict
 
 
 class random_h_flip:
-    def __init__(self, rate=.5):
+    def __init__(self, rate: float = 0.5) -> None:
         self.rate = rate
+        example_input = torch.randn((1, 3, 100, 100, 10))
+        self.fun = torch.jit.trace(torchvision.transforms.functional.hflip, example_inputs=example_input)
 
-    def __call__(self, input):
+    def __call__(self, data_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
-        FASTER RCNN ONLY
+        Randomly flips the image vertically.
 
-        :param image:
-        :param boxes:
-        :return:
+        :param data_dict Dict[str, torch.Tensor]: data_dictionary from a dataloader. Has keys:
+            key : val
+            'image' : torch.Tensor of size [C, X, Y] where C is the number of colors, X,Y are the image height and width
+            'masks' : torch.Tensor of size [I, X, Y] where I is the number of identifiable objects in the image
+            'boxes' : torch.Tensor of size [I, 4] where each box is [x1, y1, x2, y2]
+            'labels' : torch.Tensor of size [I] class label for each instance
+
+        :return: Dict[str, torch.Tensor]
         """
-        image = input['image']
-        boxes = input['boxes']
-        masks = input['masks']
-        labels = input['labels']
 
-        flip = np.random.uniform(0, 1, 1) > 0.5
+        if torch.randn(1) < self.rate:
+            data_dict['image'] = self.fun(data_dict['image'])
+            data_dict['masks'] = self.fun(data_dict['masks'])
 
-        if flip:
-            image = torchvision.transforms.functional.hflip(image)
-            masks = torchvision.transforms.functional.hflip(masks)
-
-
-        return {'image': image, 'masks': masks, 'boxes':boxes, 'labels':labels}
+        return data_dict
 
 
 class gaussian_blur:
-    def __init__(self, kernel_targets: torch.Tensor = torch.tensor([3, 5, 7]), rate: float = 0.5):
+    def __init__(self, kernel_targets: torch.Tensor = torch.tensor([3, 5, 7]), rate: float = 0.5) -> None:
         self.kernel_targets = kernel_targets
         self.rate = rate
 
-    def __call__(self, input):
+    def __call__(self, data_dict):
+        """
+        Randomly applies a gaussian blur
+
+        :param data_dict Dict[str, torch.Tensor]: data_dictionary from a dataloader. Has keys:
+            key : val
+            'image' : torch.Tensor of size [C, X, Y] where C is the number of colors, X,Y are the image height and width
+            'masks' : torch.Tensor of size [I, X, Y] where I is the number of identifiable objects in the image
+            'boxes' : torch.Tensor of size [I, 4] where each box is [x1, y1, x2, y2]
+            'labels' : torch.Tensor of size [I] class label for each instance
+
+        :return: Dict[str, torch.Tensor]
+        """
         if torch.randn(1) < self.rate:
             kern = self.kernel_targets[int(torch.randint(0, len(self.kernel_targets), (1, 1)).item())].item()
-            image = torchvision.transforms.functional.gaussian_blur(input['image'], kern)
-        else:
-            image = input['image']
-        boxes = input['boxes']
-        masks = input['masks']
-        labels = input['labels']
-        return {'image': image, 'masks': masks, 'boxes': boxes, 'labels': labels}
+            data_dict['image'] = torchvision.transforms.functional.gaussian_blur(data_dict['image'], kern)
+        return data_dict
 
 
 class random_resize:
-    def __init__(self, rate=.5, scale=(300, 1440)):
+    def __init__(self, rate: float = 0.5, scale: tuple = (300, 1440)) -> None:
         self.rate = rate
         self.scale = scale
 
-    def __call__(self, input):
-        image = input['image']
-        boxes = input['boxes']
-        masks = input['masks']
-        labels = input['labels']
+    def __call__(self, data_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        """
+        Randomly resizes an image
 
+        :param data_dict Dict[str, torch.Tensor]: data_dictionary from a dataloader. Has keys:
+            key : val
+            'image' : torch.Tensor of size [C, X, Y] where C is the number of colors, X,Y are the image height and width
+            'masks' : torch.Tensor of size [I, X, Y] where I is the number of identifiable objects in the image
+            'boxes' : torch.Tensor of size [I, 4] where each box is [x1, y1, x2, y2]
+            'labels' : torch.Tensor of size [I] class label for each instance
+
+        :return: Dict[str, torch.Tensor]
+        """
         if torch.randn(1) < self.rate:
             size = torch.randint(self.scale[0], self.scale[1], (1, 1)).item()
-            image = torchvision.transforms.functional.resize(image, size)
-            masks = torchvision.transforms.functional.resize(masks, size)
+            data_dict['image'] = torchvision.transforms.functional.resize(data_dict['image'], size)
+            data_dict['masks'] = torchvision.transforms.functional.resize(data_dict['masks'], size)
 
-        return {'image': image, 'masks': masks, 'boxes': boxes, 'labels': labels}
-
+        return data_dict
 
 
 class adjust_brightness:
-    def __init__(self, rate=.5, range_brightness=(.3,1.7)):
+    def __init__(self, rate=.5, range_brightness=(.3, 1.7)):
         self.rate = rate
         self.range = range_brightness
 
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        example_input = torch.randn((1,3,100,100,10)).to(device)
+        example_input = torch.randn((1, 3, 100, 100, 10)).to(device)
         self.fun = torch.jit.trace(torchvision.transforms.functional.adjust_brightness,
                                    example_inputs=(example_input, torch.tensor([0.5]).to(device)))
 
@@ -116,11 +127,11 @@ class adjust_brightness:
         if torch.randn(1) < self.rate:
             image = self.fun(image, val)
 
-        return {'image':image, 'masks':masks, 'boxes':boxes, 'labels':labels}
+        return {'image': image, 'masks': masks, 'boxes': boxes, 'labels': labels}
 
 
 class adjust_contrast:
-    def __init__(self, rate=.5, range_contrast=(.3,1.7)):
+    def __init__(self, rate=.5, range_contrast=(.3, 1.7)):
         self.rate = rate
         self.range = range_contrast
 
@@ -142,7 +153,7 @@ class adjust_contrast:
 
 
 class random_affine:
-    def __init__(self, rate=0.5, angle=(-180,180),shear=(-45,45), scale=(0.9, 1.5)):
+    def __init__(self, rate=0.5, angle=(-180, 180), shear=(-45, 45), scale=(0.9, 1.5)):
         self.rate = rate
         self.angle = angle
         self.shear = shear
@@ -155,14 +166,13 @@ class random_affine:
         scale = torch.FloatTensor(1).uniform_(self.scale[0], self.scale[1]).to(self.device)
         translate = torch.tensor([0, 0]).to(self.device)
 
-        #img, angle, translate, scale, shear
+        # img, angle, translate, scale, shear
         example_input = (example_image, angle, translate, scale, shear)
-        affine(example_image, angle, translate,scale,shear)
-        self.fun = affine #torch.jit.trace(affine, example_inputs=example_input)
+        affine(example_image, angle, translate, scale, shear)
+        self.fun = affine  # torch.jit.trace(affine, example_inputs=example_input)
         # self.fun(example_image, angle, translate, scale, shear)
 
     def __call__(self, input):
-
         image = input['image']
         boxes = input['boxes']
         masks = input['masks']
@@ -172,7 +182,7 @@ class random_affine:
         shear = torch.FloatTensor(1).uniform_(self.shear[0], self.shear[1]).to(self.device)
         scale = torch.FloatTensor(1).uniform_(self.scale[0], self.scale[1]).to(self.device)
 
-        translate = torch.tensor([0,0])
+        translate = torch.tensor([0, 0])
         # (img, angle, translate, scale, shear)
         if torch.randn(1) < self.rate:
             image = self.fun(image, angle, translate, scale, shear)
@@ -187,7 +197,8 @@ class random_affine:
 class to_cuda:
     def __init__(self):
         pass
-    def __call__(self, input:dict=None) -> dict:
+
+    def __call__(self, input: dict = None) -> dict:
         for key in input:
             input[key] = input[key].cuda()
         return input
@@ -205,13 +216,12 @@ class to_tensor:
 
         image = torchvision.transforms.functional.to_tensor(image)
 
-        return {'image':image, 'masks':masks, 'boxes':boxes, 'labels':labels}
+        return {'image': image, 'masks': masks, 'boxes': boxes, 'labels': labels}
 
 
 class correct_boxes:
     def __init__(self):
         self.fun = _correct_box
-
 
     def __call__(self, input):
         image = input['image']
@@ -219,12 +229,13 @@ class correct_boxes:
         masks = input['masks']
         labels = input['labels']
 
-        return self.fun(image, boxes, masks, labels) # {'image':image, 'masks':masks, 'boxes':boxes, 'labels':labels}
+        return self.fun(image, boxes, masks, labels)  # {'image':image, 'masks':masks, 'boxes':boxes, 'labels':labels}
 
 
 class stack_image:
     def __init__(self):
         pass
+
     def __call__(self, input):
         image = input['image']
         boxes = input['boxes']
@@ -240,17 +251,17 @@ class stack_image:
 def get_box_from_mask(image: torch.Tensor) -> torch.Tensor:
     ind = torch.nonzero(image)
     if len(ind) == 0:
-        return torch.tensor([0,0,0,0])
+        return torch.tensor([0, 0, 0, 0])
 
     box = torch.empty(4).to(image.device)
     x = ind[:, 1]
     y = ind[:, 0]
-    torch.stack((torch.min(x),torch.min(y),torch.max(x),torch.max(y)), out=box)
+    torch.stack((torch.min(x), torch.min(y), torch.max(x), torch.max(y)), out=box)
     return box
 
 
 @torch.jit.script
-def _correct_box(image, boxes, masks, labels):
+def _correct_box(image: torch.Tensor, boxes: torch.Tensor, masks: torch.Tensor, labels: torch.Tensor) -> Dict[str, torch.Tensor]:
     for i in range(masks.shape[0]):
         if i == 0:
             boxes = get_box_from_mask(masks[i, :, :]).unsqueeze(0).to(image.device)
@@ -258,20 +269,19 @@ def _correct_box(image, boxes, masks, labels):
             boxes = torch.cat((boxes, get_box_from_mask(masks[i, :, :]).unsqueeze(0).to(image.device)), dim=0)
 
     ind = torch.ones(masks.shape[0]).long()
-    for i in range(len(ind)):
-        area = (boxes[i, 2] - boxes[i, 0]) * (boxes[i, 3] - boxes[i, 1])
-        if not masks[i, :, :].max() or area < 1:  # true or false
+    area = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+
+    for i in range(masks.shape[0]):
+        if not masks[i, :, :].max() or area[i] < 1:  # true or false
             ind[i] = 0
 
-    masks = masks[ind > 0, :, :]
-    boxes = boxes[ind > 0, :]
-    labels = labels[ind > 0]
-    return {'image': image, 'masks': masks, 'boxes': boxes, 'labels': labels}
+    return {'image': image, 'masks': masks[ind > 0, :, :], 'boxes': boxes[ind > 0, :], 'labels': labels[ind > 0]}
 
 
 class nul_transform:
     def __init__(self):
         pass
+
     def __call__(self, input):
         return input
 
