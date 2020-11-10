@@ -5,6 +5,7 @@ import src.transforms as t
 import src.utils
 from src.gui import gui
 
+import torch
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -21,12 +22,13 @@ import sys
 import PySimpleGUI as sg
 
 import os.path
+from typing import Optional
 
 matplotlib.use('TkAgg')
 warnings.filterwarnings("ignore")
 
 
-def main(train_data, epochs, lr,  train_maskrcnn, train_keypoint_rcnn, eval):
+def main(train_data, epochs, lr,  train_maskrcnn, train_keypoint_rcnn, eval, pretrained: Optional[str] = None):
 
     if epochs is not None:
         epochs = int(epochs)
@@ -37,8 +39,8 @@ def main(train_data, epochs, lr,  train_maskrcnn, train_keypoint_rcnn, eval):
             t.random_h_flip(),
             t.random_v_flip(),
             t.random_affine(),
-            t.gaussian_blur(),
-            t.random_resize(),
+            t.gaussian_blur(kernel_targets=torch.tensor([3, 5, 7, 9, 11, 13])),
+            t.random_resize(scale=(250, 1440)),
             t.stack_image(),
             t.adjust_brightness(),
             t.adjust_contrast(),
@@ -52,7 +54,7 @@ def main(train_data, epochs, lr,  train_maskrcnn, train_keypoint_rcnn, eval):
         print('Done')
         print(f'Begining analysis of {len(data)} images: ')
 
-        src.train.train_mask_rcnn(data, epochs=epochs, lr=float(lr))
+        src.train.train_mask_rcnn(data, epochs=epochs, lr=float(lr), pretrained=pretrained)
 
     if train_keypoint_rcnn:
         transforms = None
@@ -72,6 +74,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", help='Number of epochs to train.')
     parser.add_argument("--train_mask_rcnn", help='Do we train mask_rcnn from scratch?', action="store_true")
+    parser.add_argument("--pretrained_model", help='Path location of pretrained model')
     parser.add_argument("--train_keypoint_rcnn", help='Do we train mask_rcnn from scratch?', action="store_true")
     parser.add_argument("-t", "--train_all", help='Do we train a all models from scratch?', action="store_true")
     parser.add_argument("-d", "--train_data", help='Location of training data')
@@ -79,8 +82,9 @@ if __name__ == "__main__":
     parser.add_argument('--lr', help='Learning Rate')
     args = parser.parse_args()
     # If any arg is passed do this thing
+
     if len(sys.argv) > 1:
-        main(args.train_data, args.epochs, args.lr, args.train_mask_rcnn, args.train_keypoint_rcnn, args.eval)
+        main(args.train_data, args.epochs, args.lr, args.train_mask_rcnn, args.train_keypoint_rcnn, args.eval, args.pretrained_model)
     else:
        gui()
 
