@@ -1,14 +1,12 @@
 import torch
 import torchvision.transforms.functional
-from typing import List, Dict
+from typing import Dict, Tuple
 
 
 class random_v_flip:
     def __init__(self, rate: float = 0.5) -> None:
         self.rate = rate
-
-        example_input = torch.randn((1, 3, 100, 100, 10))
-        self.fun = torch.jit.trace(torchvision.transforms.functional.vflip, example_inputs=example_input)
+        self.fun = torch.jit.script(torchvision.transforms.functional.vflip)
 
     def __call__(self, data_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
@@ -16,7 +14,7 @@ class random_v_flip:
 
         :param data_dict Dict[str, torch.Tensor]: data_dictionary from a dataloader. Has keys:
             key : val
-            'mask' : torch.Tensor of size [C, X, Y] where C is the number of colors, X,Y are the mask height and width
+            'image' : torch.Tensor of size [C, X, Y] where C is the number of colors, X,Y are the mask height and width
             'masks' : torch.Tensor of size [I, X, Y] where I is the number of identifiable objects in the mask
             'boxes' : torch.Tensor of size [I, 4] where each box is [x1, y1, x2, y2]
             'labels' : torch.Tensor of size [I] class label for each instance
@@ -25,7 +23,7 @@ class random_v_flip:
         """
 
         if torch.randn(1) < self.rate:
-            data_dict['mask'] = self.fun(data_dict['mask'])
+            data_dict['image'] = self.fun(data_dict['image'])
             data_dict['masks'] = self.fun(data_dict['masks'])
 
         return data_dict
@@ -34,8 +32,7 @@ class random_v_flip:
 class random_h_flip:
     def __init__(self, rate: float = 0.5) -> None:
         self.rate = rate
-        example_input = torch.randn((1, 3, 100, 100, 10))
-        self.fun = torch.jit.trace(torchvision.transforms.functional.hflip, example_inputs=example_input)
+        self.fun = torch.jit.script(torchvision.transforms.functional.hflip)
 
     def __call__(self, data_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
@@ -52,7 +49,7 @@ class random_h_flip:
         """
 
         if torch.randn(1) < self.rate:
-            data_dict['mask'] = self.fun(data_dict['mask'])
+            data_dict['image'] = self.fun(data_dict['image'])
             data_dict['masks'] = self.fun(data_dict['masks'])
 
         return data_dict
@@ -78,7 +75,7 @@ class gaussian_blur:
         """
         if torch.randn(1) < self.rate:
             kern = self.kernel_targets[int(torch.randint(0, len(self.kernel_targets), (1, 1)).item())].item()
-            data_dict['mask'] = torchvision.transforms.functional.gaussian_blur(data_dict['mask'], kern)
+            data_dict['image'] = torchvision.transforms.functional.gaussian_blur(data_dict['image'], kern)
         return data_dict
 
 
@@ -102,7 +99,7 @@ class random_resize:
         """
         if torch.randn(1) < self.rate:
             size = torch.randint(self.scale[0], self.scale[1], (1, 1)).item()
-            data_dict['mask'] = torchvision.transforms.functional.resize(data_dict['mask'], size)
+            data_dict['image'] = torchvision.transforms.functional.resize(data_dict['image'], size)
             data_dict['masks'] = torchvision.transforms.functional.resize(data_dict['masks'], size)
 
         return data_dict
@@ -112,135 +109,106 @@ class adjust_brightness:
     def __init__(self, rate=.5, range_brightness=(.3, 1.7)):
         self.rate = rate
         self.range = range_brightness
+        self.fun = torch.jit.script(torchvision.transforms.functional.adjust_brightness)
 
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        example_input = torch.randn((1, 3, 100, 100, 10)).to(device)
-        self.fun = torch.jit.trace(torchvision.transforms.functional.adjust_brightness,
-                                   example_inputs=(example_input, torch.tensor([0.5]).to(device)))
+    def __call__(self, data_dict):
 
-    def __call__(self, input):
-        image = input['mask']
-        boxes = input['boxes']
-        masks = input['masks']
-        labels = input['labels']
-        val = torch.FloatTensor(1).uniform_(self.range[0], self.range[1]).to(image.device)
+        val = torch.FloatTensor(1).uniform_(self.range[0], self.range[1])
         if torch.randn(1) < self.rate:
-            image = self.fun(image, val)
+            data_dict['image'] = self.fun(data_dict['image'], val)
 
-        return {'mask': image, 'masks': masks, 'boxes': boxes, 'labels': labels}
+        return data_dict
 
 
+# needs docstring
 class adjust_contrast:
-    def __init__(self, rate=.5, range_contrast=(.3, 1.7)):
+    def __init__(self, rate: float = 0.5, range_contrast: tuple = (.3, 1.7)) -> None:
         self.rate = rate
         self.range = range_contrast
+        self.fun = torch.jit.script(torchvision.transforms.functional.adjust_brightness)
 
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        example_input = torch.randn((1, 3, 100, 100, 10)).to(device)
-        self.fun = torch.jit.trace(torchvision.transforms.functional.adjust_brightness,
-                                   example_inputs=(example_input, torch.tensor([0.5]).to(device)))
+    def __call__(self, data_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
 
-    def __call__(self, input):
-        image = input['mask']
-        boxes = input['boxes']
-        masks = input['masks']
-        labels = input['labels']
-        val = torch.FloatTensor(1).uniform_(self.range[0], self.range[1]).to(image.device)
         if torch.randn(1) < self.rate:
-            image = torchvision.transforms.functional.adjust_contrast(image, val)
+            val = torch.FloatTensor(1).uniform_(self.range[0], self.range[1])  # .to(image.device)
+            data_dict['image'] = torchvision.transforms.functional.adjust_contrast(data_dict['image'], val)
 
-        return {'mask': image, 'masks': masks, 'boxes': boxes, 'labels': labels}
+        return data_dict
 
 
+# needs docstring
 class random_affine:
-    def __init__(self, rate=0.5, angle=(-180, 180), shear=(-45, 45), scale=(0.9, 1.5)):
+    def __init__(self, rate: float = 0.5, angle: Tuple[int, int] = (-180, 180),
+                 shear: Tuple[int, int] = (-45, 45), scale: Tuple[float, float] = (0.9, 1.5)) -> None:
         self.rate = rate
         self.angle = angle
         self.shear = shear
         self.scale = scale
 
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        example_image = torch.randn((1, 3, 100, 100)).to(self.device)
-        angle = torch.FloatTensor(1).uniform_(self.angle[0], self.angle[1]).to(self.device)
-        shear = torch.FloatTensor(1).uniform_(self.shear[0], self.shear[1]).to(self.device)
-        scale = torch.FloatTensor(1).uniform_(self.scale[0], self.scale[1]).to(self.device)
-        translate = torch.tensor([0, 0]).to(self.device)
-
-        # img, angle, translate, scale, shear
-        example_input = (example_image, angle, translate, scale, shear)
-        affine(example_image, angle, translate, scale, shear)
-        self.fun = affine  # torch.jit.trace(affine, example_inputs=example_input)
-        # self.fun(example_image, angle, translate, scale, shear)
-
-    def __call__(self, input):
-        image = input['mask']
-        boxes = input['boxes']
-        masks = input['masks']
-        labels = input['labels']
-
-        angle = torch.FloatTensor(1).uniform_(self.angle[0], self.angle[1]).to(self.device)
-        shear = torch.FloatTensor(1).uniform_(self.shear[0], self.shear[1]).to(self.device)
-        scale = torch.FloatTensor(1).uniform_(self.scale[0], self.scale[1]).to(self.device)
-
-        translate = torch.tensor([0, 0])
-        # (img, angle, translate, scale, shear)
+    def __call__(self, data_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         if torch.randn(1) < self.rate:
-            image = self.fun(image, angle, translate, scale, shear)
-            masks = self.fun(masks, angle, translate, scale, shear)
-            #
-            # mask = self.fun(img=mask, angle=angle, shear=shear, scale=scale, translate=translate)
-            # masks = self.fun(img=masks, angle=angle, shear=shear, scale=scale, translate=translate)
+            angle = torch.FloatTensor(1).uniform_(self.angle[0], self.angle[1]).to(self.device)
+            shear = torch.FloatTensor(1).uniform_(self.shear[0], self.shear[1]).to(self.device)
+            scale = torch.FloatTensor(1).uniform_(self.scale[0], self.scale[1]).to(self.device)
+            translate = torch.tensor([0, 0])
 
-        return {'mask': image, 'masks': masks, 'boxes': boxes, 'labels': labels}
+            data_dict['image'] = _affine(data_dict['image'], angle, translate, scale, shear)
+            data_dict['masks'] = _affine(data_dict['masks'], angle, translate, scale, shear)
+
+        return data_dict
 
 
+# Needs Docstring
 class to_cuda:
     def __init__(self):
         pass
 
-    def __call__(self, input: dict = None) -> dict:
-        for key in input:
-            input[key] = input[key].cuda()
-        return input
+    def __call__(self, data_dict: Dict[str, torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+        for key in data_dict:
+            data_dict[key] = data_dict[key].cuda()
+        return data_dict
 
 
+# Needs Docstring
 class to_tensor:
     def __init__(self):
         pass
 
-    def __call__(self, input):
-        image = input['mask']
-        boxes = input['boxes']
-        masks = input['masks']
-        labels = input['labels']
+    def __call__(self, data_dict):
+        data_dict['image'] = torchvision.transforms.functional.to_tensor(data_dict['image'])
 
-        image = torchvision.transforms.functional.to_tensor(image)
-
-        return {'mask': image, 'masks': masks, 'boxes': boxes, 'labels': labels}
+        return data_dict
 
 
 class correct_boxes:
     def __init__(self):
         pass
 
-    def __call__(self, input):
-        return _correct_box(image=input['mask'], masks=input['masks'], labels=input['labels'])
+    def __call__(self, data_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        """
+        Other geometric transforms may have removed some of the visible stereocillia. We use this transform to infer new
+        bounding boxes from the old masks and remove instances (I) where  there was no segmentation mask.
+
+        :param data_dict Dict[str, torch.Tensor]: data_dictionary from a dataloader. Has keys:
+            key : val
+            'image' : torch.Tensor of size [C, X, Y] where C is the number of colors, X,Y are the mask height and width
+            'masks' : torch.Tensor of size [I, X, Y] where I is the number of identifiable objects in the mask
+            'boxes' : torch.Tensor of size [I, 4] where each box is [x1, y1, x2, y2]
+            'labels' : torch.Tensor of size [I] class label for each instance
+
+        :return: Dict[str, torch.Tensor]
+        """
+
+        return _correct_box(image=data_dict['image'], masks=data_dict['masks'], labels=data_dict['labels'])
 
 
 class stack_image:
     def __init__(self):
         pass
 
-    def __call__(self, input):
-        image = input['mask']
-        boxes = input['boxes']
-        masks = input['masks']
-        labels = input['labels']
-
-        image = torch.cat((image, image, image), dim=0)
-
-        return {'mask': image, 'masks': masks, 'boxes': boxes, 'labels': labels}
-
+    def __call__(self, data_dict):
+        data_dict['image'] = torch.cat((data_dict['image'], data_dict['image'], data_dict['image']), dim=0)
+        return data_dict
 
 @torch.jit.script
 def get_box_from_mask(mask: torch.Tensor) -> torch.Tensor:
@@ -269,21 +237,13 @@ def _correct_box(image: torch.Tensor,  masks: torch.Tensor, labels: torch.Tensor
     boxes = torch.cat([get_box_from_mask(m).unsqueeze(0) for m in masks], dim=0)
     ind = torch.tensor([m.max().item() > 0 for m in masks], dtype=torch.bool)
 
-    return {'mask': image, 'masks': masks[ind, :, :], 'boxes': boxes[ind, :], 'labels': labels[ind]}
+    return {'image': image, 'masks': masks[ind, :, :], 'boxes': boxes[ind, :], 'labels': labels[ind]}
 
 
-
-class nul_transform:
-    def __init__(self):
-        pass
-
-    def __call__(self, input):
-        return input
-
-
-def affine(img, angle, translate, scale, shear):
+@torch.jit.script
+def _affine(img: torch.Tensor, angle: torch.Tensor, translate: torch.Tensor, scale: torch.Tensor, shear: torch.Tensor) -> torch.Tensor:
     angle = float(angle.item())
     scale = float(scale.item())
-    shear = float(shear.item())
-    translate = translate.tolist()
-    return torchvision.transforms.functional.affine(img, angle, translate, scale, shear)
+    shear = [float(shear.item())]
+    translate_list = [int(translate[0].item()), int(translate[1].item())]
+    return torchvision.transforms.functional.affine(img, angle, translate_list, scale, shear)

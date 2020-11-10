@@ -37,11 +37,10 @@ class MaskData(Dataset):
 
             im_path = os.path.join(basedir, im_name)
             try:
-                image = TF.to_tensor(PIL.Image.open(im_path))
+                image = TF.to_tensor(PIL.Image.open(im_path)).pin_memory()
             except:
                 continue
 
-            # mask = torch.cat((mask, mask, mask), dim=0)
             mask = torch.zeros((len(df), image.shape[1], image.shape[2]), dtype=torch.uint8)
             labels = []
 
@@ -68,20 +67,20 @@ class MaskData(Dataset):
                 if mask[l,:,:].max() == 0:
                     raise ValueError('Mask is jank')
 
-            self.labels.append(torch.tensor(labels))
-            self.masks.append(mask)
-            self.boxes.append(boxes)
-            self.images.append(image)
+            self.labels.append(torch.tensor(labels).pin_memory())
+            self.masks.append(mask.pin_memory())
+            self.boxes.append(boxes.pin_memory())
+            self.images.append(image.pin_memory())
 
     def __getitem__(self, item):
         data_dict ={'boxes': self.boxes[item],
                     'labels': self.labels[item],
                     'masks': self.masks[item],
-                    'mask': self.images[item]}
+                    'image': self.images[item]}
 
         data_dict = self.transforms(data_dict)
 
-        return data_dict['mask'], data_dict
+        return data_dict['image'], data_dict
 
     def __len__(self):
         return len(self.images)
@@ -183,7 +182,7 @@ class KeypointData(Dataset):
         for f in files:
             df = pandas.read_csv(f)
             image = TF.to_tensor(PIL.Image.open(f[:-4:] +  '.png'))
-            image = torch.cat((image, image, image), dim=0)
+            image = torch.cat((image, image, image), dim=0).pin_memory()
 
             boxes = None
             keypoints = None

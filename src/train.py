@@ -29,9 +29,7 @@ def train_mask_rcnn(data=None, epochs: int = None, lr: float = None,
         print('Loading...')
         mask_rcnn.load_state_dict(torch.load(pretrained))
 
-    if torch.cuda.is_available(): device = 'cuda:0'
-    else: device = 'cpu'
-
+    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
     mask_rcnn.train().to(device)
     optimizer = torch.optim.Adam(mask_rcnn.parameters(), lr=lr)
