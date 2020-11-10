@@ -59,6 +59,7 @@ class gaussian_blur:
     def __init__(self, kernel_targets: torch.Tensor = torch.tensor([3, 5, 7]), rate: float = 0.5) -> None:
         self.kernel_targets = kernel_targets
         self.rate = rate
+        self.fun = torch.jit.script(torchvision.transforms.functional.gaussian_blur)
 
     def __call__(self, data_dict):
         """
@@ -75,7 +76,7 @@ class gaussian_blur:
         """
         if torch.randn(1) < self.rate:
             kern = self.kernel_targets[int(torch.randint(0, len(self.kernel_targets), (1, 1)).item())].item()
-            data_dict['image'] = torchvision.transforms.functional.gaussian_blur(data_dict['image'], kern)
+            data_dict['image'] = self.fun(data_dict['image'], [kern, kern])
         return data_dict
 
 
@@ -115,7 +116,7 @@ class adjust_brightness:
 
         val = torch.FloatTensor(1).uniform_(self.range[0], self.range[1])
         if torch.randn(1) < self.rate:
-            data_dict['image'] = self.fun(data_dict['image'], val)
+            data_dict['image'] = self.fun(data_dict['image'], val.item())
 
         return data_dict
 
@@ -131,7 +132,7 @@ class adjust_contrast:
 
         if torch.randn(1) < self.rate:
             val = torch.FloatTensor(1).uniform_(self.range[0], self.range[1])  # .to(image.device)
-            data_dict['image'] = torchvision.transforms.functional.adjust_contrast(data_dict['image'], val)
+            data_dict['image'] = torchvision.transforms.functional.adjust_contrast(data_dict['image'], val.to(data_dict['image'].device))
 
         return data_dict
 
@@ -147,9 +148,9 @@ class random_affine:
 
     def __call__(self, data_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         if torch.randn(1) < self.rate:
-            angle = torch.FloatTensor(1).uniform_(self.angle[0], self.angle[1]).to(self.device)
-            shear = torch.FloatTensor(1).uniform_(self.shear[0], self.shear[1]).to(self.device)
-            scale = torch.FloatTensor(1).uniform_(self.scale[0], self.scale[1]).to(self.device)
+            angle = torch.FloatTensor(1).uniform_(self.angle[0], self.angle[1])
+            shear = torch.FloatTensor(1).uniform_(self.shear[0], self.shear[1])
+            scale = torch.FloatTensor(1).uniform_(self.scale[0], self.scale[1])
             translate = torch.tensor([0, 0])
 
             data_dict['image'] = _affine(data_dict['image'], angle, translate, scale, shear)
@@ -220,7 +221,7 @@ def get_box_from_mask(mask: torch.Tensor) -> torch.Tensor:
     ind = torch.nonzero(mask)
 
     if ind.shape[0] == 0:
-        box = torch.tensor([0, 0, 0, 0])
+        box = torch.tensor([0, 0, 0, 0]).to(mask.device)
 
     else:
         box = torch.empty(4).to(mask.device)
@@ -235,7 +236,8 @@ def get_box_from_mask(mask: torch.Tensor) -> torch.Tensor:
 def _correct_box(image: torch.Tensor,  masks: torch.Tensor, labels: torch.Tensor) -> Dict[str, torch.Tensor]:
 
     boxes = torch.cat([get_box_from_mask(m).unsqueeze(0) for m in masks], dim=0)
-    ind = torch.tensor([m.max().item() > 0 for m in masks], dtype=torch.bool)
+    area = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+    ind = torch.tensor([a.item() > 0 for a in area], dtype=torch.bool)
 
     return {'image': image, 'masks': masks[ind, :, :], 'boxes': boxes[ind, :], 'labels': labels[ind]}
 
