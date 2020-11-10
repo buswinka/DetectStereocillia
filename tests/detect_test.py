@@ -32,7 +32,7 @@ def test_bundle_detection_scheme():
     fast.eval()
     out = faster_rcnn(image.unsqueeze(0).cuda())
     # torch.save(faster_rcnn.state_dict(), '/src/faster_rcnn.mdl')
-    # src.utils.render_boxes(image.unsqueeze(0), out, 0.5)
+    # src.utils.render_boxes(mask.unsqueeze(0), out, 0.5)
     assert True
 
 

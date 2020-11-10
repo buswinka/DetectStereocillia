@@ -41,7 +41,7 @@ class MaskData(Dataset):
             except:
                 continue
 
-            # image = torch.cat((image, image, image), dim=0)
+            # mask = torch.cat((mask, mask, mask), dim=0)
             mask = torch.zeros((len(df), image.shape[1], image.shape[2]), dtype=torch.uint8)
             labels = []
 
@@ -77,11 +77,11 @@ class MaskData(Dataset):
         data_dict ={'boxes': self.boxes[item],
                     'labels': self.labels[item],
                     'masks': self.masks[item],
-                    'image': self.images[item]}
+                    'mask': self.images[item]}
 
         data_dict = self.transforms(data_dict)
 
-        return data_dict['image'], data_dict
+        return data_dict['mask'], data_dict
 
     def __len__(self):
         return len(self.images)
@@ -232,12 +232,12 @@ class KeypointData(Dataset):
         data_dict ={'boxes': self.boxes[item],
                     'labels': self.labels[item],
                     'keypoints': self.keypoints[item],
-                    'image': self.images[item]}
+                    'mask': self.images[item]}
 
         if self.transforms is not None:
             data_dict = self.transforms(data_dict)
 
-        return data_dict['image'], data_dict
+        return data_dict['mask'], data_dict
 
     def __len__(self):
         return len(self.images)

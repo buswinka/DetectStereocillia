@@ -75,7 +75,7 @@ if __name__ == "__main__":
     parser.add_argument("--train_keypoint_rcnn", help='Do we train mask_rcnn from scratch?', action="store_true")
     parser.add_argument("-t", "--train_all", help='Do we train a all models from scratch?', action="store_true")
     parser.add_argument("-d", "--train_data", help='Location of training data')
-    parser.add_argument("-e", '--eval', help='Path to image file to analyze.')
+    parser.add_argument("-e", '--eval', help='Path to mask file to analyze.')
     parser.add_argument('--lr', help='Learning Rate')
     args = parser.parse_args()
     # If any arg is passed do this thing

@@ -91,7 +91,7 @@ def gui():
                 window.Element('Error').Update(' ')
                 _ANALYZED = True
             except (AttributeError, RuntimeError):
-                window.Element('Error').Update('Error: Could not load image')
+                window.Element('Error').Update('Error: Could not load mask')
                 _ANALYZED = False
                 continue
 

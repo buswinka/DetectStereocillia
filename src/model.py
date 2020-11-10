@@ -12,7 +12,7 @@ boxes: [x1,y1,x2,y2]
 OUT:
 boxes (FloatTensor[N, 4]): the predicted boxes in [x1, y1, x2, y2] format, 
     with values of x between 0 and W and values of y between 0 and H
-labels (Int64Tensor[N]): the predicted labels for each image
+labels (Int64Tensor[N]): the predicted labels for each mask
 scores (Tensor[N]): the scores or each prediction
 masks (UInt8Tensor[N, 1, H, W]): the predicted masks for each instance, 
     in 0-1 range. In order to obtain the final segmentation masks, 
