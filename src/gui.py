@@ -86,7 +86,7 @@ def gui():
 
         elif event == 'Analyze':
             try:
-                out, masks, keypoints = eval(values['-FILE-'])
+                out, masks, keypoints, boxes = eval(values['-FILE-'])
                 out = out.transpose((1, 2, 0))
                 window.Element('Error').Update(' ')
                 _ANALYZED = True
@@ -107,6 +107,18 @@ def gui():
                 plt.plot(x.cpu().detach().numpy(), y.cpu().detach().numpy(), 'b-', alpha=0.5)
                 plt.plot(x.cpu().detach().numpy(), y.cpu().detach().numpy(), 'b.', alpha=0.5)
 
+            for i, box in enumerate(boxes['boxes']):
+                if boxes['scores'][i] < 0.5:
+                    continue
+                x1 = box[0]
+                y1 = box[1]
+                x2 = box[2]
+                y2 = box[3]
+                l = boxes['labels'][i].detach().cpu().numpy()
+                plt.plot([x1, x2], [y2, y2], c='C' + str(l), lw=1)
+                plt.plot([x1, x2], [y1, y1], c='C' + str(l), lw=1)
+                plt.plot([x1, x1], [y1, y2], c='C' + str(l), lw=1)
+                plt.plot([x2, x2], [y1, y2], c='C' + str(l), lw=1)
 
             ax.axes.xaxis.set_visible(False)
             ax.axes.yaxis.set_visible(False)

@@ -2,7 +2,7 @@ import torch
 import torchvision.transforms.functional
 from PIL.Image import Image
 import numpy as np
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple, Union, List
 
 
 class random_v_flip:
@@ -54,6 +54,29 @@ class random_h_flip:
             data_dict['image'] = self.fun(data_dict['image'])
             data_dict['masks'] = self.fun(data_dict['masks'])
 
+        return data_dict
+
+
+class normalize:
+    def __init__(self, mean: List[float] = [0.5], std: List[float] = [0.5]) -> None:
+        self.mean = mean
+        self.std = std
+        self.fun = torch.jit.script(torchvision.transforms.functional.normalize)
+
+    def __call__(self, data_dict):
+        """
+        Randomly applies a gaussian blur
+
+        :param data_dict Dict[str, torch.Tensor]: data_dictionary from a dataloader. Has keys:
+            key : val
+            'mask' : torch.Tensor of size [C, X, Y] where C is the number of colors, X,Y are the mask height and width
+            'masks' : torch.Tensor of size [I, X, Y] where I is the number of identifiable objects in the mask
+            'boxes' : torch.Tensor of size [I, 4] where each box is [x1, y1, x2, y2]
+            'labels' : torch.Tensor of size [I] class label for each instance
+
+        :return: Dict[str, torch.Tensor]
+        """
+        data_dict['image'] = self.fun(data_dict['image'], self.mean, self.std)
         return data_dict
 
 
@@ -254,6 +277,7 @@ def _correct_box(image: torch.Tensor,  masks: torch.Tensor, labels: torch.Tensor
     :param labels: torch.Tensor[float] of shape [I]
     :return: Dict[str, torch.Tensor] with keys 'image', 'masks', 'boxes' 'labels'
     """
+    # boxes = torch.zeros((4, masks.shape[0]))
     boxes = torch.cat([get_box_from_mask(m).unsqueeze(0) for m in masks], dim=0)
     area = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
     ind = torch.tensor([a.item() > 0 for a in area], dtype=torch.bool)

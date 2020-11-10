@@ -1,5 +1,5 @@
 from src.model import mask_rcnn
-from src.dataloader import MaskData, ChunjieData, KeypointData
+from src.dataloader import MaskData, KeypointData, FasterRCNNData
 import src.transforms as t
 import src.utils
 import torch.optim
@@ -26,7 +26,6 @@ def test_MaskData_stress():
     image, data_dict = tests[1]
     mask = data_dict['masks']
 
-    print(mask.shape)
     m,_ = mask.max(dim=0)
     plt.imshow(m)
     plt.show()
@@ -54,5 +53,43 @@ def test_keypoint_dataloader():
     assert data_dict['keypoints'].shape[2] == 3
 
 
-test_MaskData_stress()
+def test_fasterrcnn_dataloader():
+    path = '/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/train/faster'
+    transforms = torchvision.transforms.Compose([
+        t.to_cuda(),
+        t.stack_image(),
+        t.correct_boxes()
+    ])
 
+    data = FasterRCNNData(path, transforms)
+    image, data_dict = data[0]
+
+    boxes = data_dict['boxes']
+
+    image = image.cpu().numpy()
+    boxes = data_dict['boxes'].detach().cpu().numpy()
+
+    c = ['nul', 'r', 'b', 'y', 'w']
+
+    # x1, y1, x2, y2
+
+    plt.imshow(image[0, :, :],cmap='Greys_r')
+
+    plt.tight_layout()
+    print(data_dict['labels'])
+
+    for i, box in enumerate(boxes):
+        x1 = box[0]
+        y1 = box[1]
+        x2 = box[2]
+        y2 = box[3]
+        l = data_dict['labels'][i].detach().cpu().numpy()
+
+        plt.plot([x1, x2], [y2, y2], c='C' + str(l), lw=0.5)
+        plt.plot([x1, x2], [y1, y1], c='C' + str(l), lw=0.5)
+        plt.plot([x1, x1], [y1, y2], c='C' + str(l), lw=0.5)
+        plt.plot([x2, x2], [y1, y2], c='C' + str(l), lw=0.5)
+
+    plt.show()
+
+test_fasterrcnn_dataloader()

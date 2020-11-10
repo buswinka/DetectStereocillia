@@ -35,7 +35,7 @@ def main(train_data, epochs, lr,  train_maskrcnn, train_keypoint_rcnn, eval, pre
 
     if train_maskrcnn:
         transforms = torchvision.transforms.Compose([
-            t.to_cuda(),
+           t.to_cuda(),
             t.random_h_flip(),
             t.random_v_flip(),
             t.random_affine(),

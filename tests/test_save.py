@@ -21,7 +21,7 @@ def test_save_mask():
         torch.load('/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/models/mask_rcnn.mdl'))
     mask_rcnn.eval().cuda()
 
-    image_path = '/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/16k01.TIF'
+    image_path = '/data/test/16k01.TIF'
     image = TF.to_tensor(PIL.Image.open(image_path))
     image = torch.cat((image, image, image), dim=0)
 

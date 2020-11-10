@@ -23,7 +23,10 @@ masks (UInt8Tensor[N, 1, H, W]): the predicted masks for each instance,
 mask_rcnn = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=False, progress=True, num_classes=4,
                                                                pretrained_backbone=True)
 
-faster_rcnn = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=False, progress=True, num_classes=2,
+faster_rcnn_bundle = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=False, progress=True, num_classes=2,
+                                                               pretrained_backbone=True)
+
+faster_rcnn_cilia = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=False, progress=True, num_classes=8,
                                                                pretrained_backbone=True)
 
 keypoint_rcnn = torchvision.models.detection.keypointrcnn_resnet50_fpn(pretrained=False, progress=True, num_classes=2,
