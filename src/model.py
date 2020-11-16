@@ -27,7 +27,8 @@ faster_rcnn_bundle = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretra
                                                                pretrained_backbone=True)
 
 faster_rcnn_cilia = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=False, progress=True, num_classes=8,
-                                                               pretrained_backbone=True)
+                                                               pretrained_backbone=True,
+                                                                         trainable_backbone_layers=5)
 
 keypoint_rcnn = torchvision.models.detection.keypointrcnn_resnet50_fpn(pretrained=False, progress=True, num_classes=2,
                                                                        num_keypoints=3, pretrained_backbone=True,

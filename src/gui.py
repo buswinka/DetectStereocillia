@@ -20,6 +20,8 @@ import sys
 import PySimpleGUI as sg
 
 import os.path
+
+
 def draw_figure_w_toolbar(canvas, fig):
     if canvas.children:
         for child in canvas.winfo_children():
@@ -128,7 +130,8 @@ def gui():
         elif event == 'Save Analysis':
             if _ANALYZED:
                 filename = values['-FILE-']
-                src.save.save(masks, filename)
+                src.save.save_mask(masks, filename)
+                src.save.save_boxes(boxes, filename)
             else:
                 window.Element('Error').Update('Error: File has not been analyzed. Nothing to Save')
                 continue

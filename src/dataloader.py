@@ -19,7 +19,7 @@ PIL.ImageFile.LOAD_TRUNCATED_IMAGES = True
 class MaskData(Dataset):
     def __init__(self, basedir: str, transforms: Callable, to_cuda: bool = False) -> None:
 
-        files = glob.glob(os.path.join(basedir, 'data.csv'))
+        self.files = glob.glob(os.path.join(basedir, 'data.csv'))
 
         self.transforms = transforms
         self.masks = []
@@ -27,11 +27,11 @@ class MaskData(Dataset):
         self.labels = []
         self.boxes = []
 
-        data_frame = pandas.read_csv(files[0])
-        image_names = data_frame['filename'].unique()
+        data_frame = pandas.read_csv(self.files[0])
+        image_names = data_frame['save_name'].unique()
 
         for im_name in image_names:
-            df = data_frame[data_frame['filename'] == im_name]
+            df = data_frame[data_frame['save_name'] == im_name]
             im_path = os.path.join(basedir, im_name)
 
             if len(df) <= 1 or not os.path.exists(im_path):  # some dataframes will contain no data... skip
@@ -78,7 +78,7 @@ class MaskData(Dataset):
 class FasterRCNNData(Dataset):
     def __init__(self, basedir: str, transforms: Callable) -> None:
 
-        files = glob.glob(os.path.join(basedir, '*.xml'))
+        self.files = glob.glob(os.path.join(basedir, '*.xml'))
 
         self.transforms = transforms
         self.masks = []
@@ -86,7 +86,7 @@ class FasterRCNNData(Dataset):
         self.labels = []
         self.boxes = []
 
-        for f in files:
+        for f in self.files:
             image_path = os.path.splitext(f)[0] + '.png'
             image = TF.to_tensor(PIL.Image.open(image_path)).pin_memory()
 
@@ -101,6 +101,16 @@ class FasterRCNNData(Dataset):
             class_labels = torch.tensor([self._get_class_label(cls.text) for c in root.iter('object') for cls in c.iter('name')])
             bbox_loc = torch.tensor([box_from_text(a) for c in root.iter('object') for a in c.iter('bndbox')])
             mask = torch.cat([self._infer_mask_from_box(b, im_shape).unsqueeze(0) for b in bbox_loc], dim=0)
+
+            ind = torch.logical_not(torch.isnan(class_labels))
+
+            if ind.sum() == 0:
+                continue
+
+            class_labels = class_labels[ind].type(torch.int64)
+            bbox_loc = bbox_loc[ind, :]
+            mask = mask[ind, :, :]
+
 
             self.images.append(image)
             self.boxes.append(bbox_loc.pin_memory())
@@ -121,19 +131,19 @@ class FasterRCNNData(Dataset):
     def _get_class_label(label_text:str) -> int:
         label = 0
         if label_text == 'Tall+':
-            label = 1
+            label = float('nan')#1
         elif label_text == 'Tall-':
             label = 2
         elif label_text == 'Mid+':
-            label = 3
+            label = float('nan')#3
         elif label_text == 'Mid-':
             label = 4
         elif label_text == 'Short+':
-            label = 5
+            label = float('nan')#5
         elif label_text == 'Short-':
             label = 6
         elif label_text == 'Junk' or label_text == 'junk':
-            label = 7
+            label = float('nan')#7
         else:
             raise ValueError(f'Unidentified Label in XML file {label_text}')
 

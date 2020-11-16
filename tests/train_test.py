@@ -13,23 +13,24 @@ import torchvision.transforms.functional as TF
 from PIL import Image
 
 path = '/media/DataStorage/Dropbox (Partners HealthCare)/DetectStereocillia/data/train/faster'
-epochs = 1
+epochs = 200
 
 transforms = torchvision.transforms.Compose([
     t.to_cuda(),
-    t.random_resize(scale=(250, 800)),
-    t.normalize(),
-    t.random_h_flip(),
-    t.random_v_flip(),
-    t.gaussian_blur(kernel_targets=torch.tensor([3, 5, 7])),
-    t.random_affine(),
-    t.stack_image(),
-    t.adjust_brightness(),
-    t.adjust_contrast(),
+    # t.random_resize(scale=(250, 800)),
+    # t.normalize(),
+    # t.random_h_flip(),
+    # t.random_v_flip(),
+    # t.gaussian_blur(kernel_targets=torch.tensor([3, 5, 7])),
+    # t.random_affine(),
+    # t.stack_image(),
+    # t.adjust_brightness(),
+    # t.adjust_contrast(),
     t.correct_boxes(),
 ])
 
 data = FasterRCNNData(path, transforms)
+
 
 transforms = torchvision.transforms.Compose([
     t.to_cuda(),
@@ -43,9 +44,12 @@ validate = FasterRCNNData(val_path, transforms)
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 model = src.model.faster_rcnn_cilia
-model.load_state_dict(torch.load('../models/faster_rcnn_cilia_Pretrained.mdl'))
+# model.load_state_dict(torch.load('../models/faster_rcnn_cilia_Pretrained.mdl'))
 model.train().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-6)
+
+choose = 2
+print(data.files[choose])
 
 out_str = ''
 if len(data) < 1:
@@ -55,7 +59,7 @@ for e in range(epochs):
     val_loss = []
     time_1 = time.clock_gettime_ns(1)
     for image, data_dict in data:
-        optimizer.zero_grad()
+        image, data_dict =data[choose]
         loss = model(image.unsqueeze(0), [data_dict])
         losses = 0
         for key in loss:
@@ -102,7 +106,7 @@ for e in range(epochs):
                                                                 f' val loss: {torch.tensor(val_loss).mean().item()}'
         print(out_str)
 
-torch.save(model.state_dict(), '../models/faster_rcnn_cilia.mdl')
+torch.save(model.state_dict(), '../models/faster_rcnn_cilia_missing.mdl')
 
 
 # ___________ CHECK ___________ #
